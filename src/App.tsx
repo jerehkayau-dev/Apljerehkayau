@@ -24,8 +24,16 @@ import {
   Database,
   Cloud,
   Image as ImageIcon,
-  Printer
+  Printer,
+  FolderOpen,
+  CloudUpload,
+  CloudDownload,
+  LogOut,
+  RefreshCw,
+  AlertCircle
 } from 'lucide-react';
+import { initAuth, googleSignIn, getAccessToken, logout } from './lib/firebaseAuth';
+import type { User } from 'firebase/auth';
 
 interface Member {
   namaLengkap: string;
@@ -50,8 +58,17 @@ const getAvatarUrl = (foto: string | undefined, name: string): string => {
 
 export default function App() {
   // Navigation State
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'tree' | 'data'>('dashboard');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'tree' | 'data' | 'drive'>('dashboard');
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
+
+  // Google Drive Cloud State
+  const [user, setUser] = useState<User | null>(null);
+  const [driveToken, setDriveToken] = useState<string | null>(null);
+  const [driveBackups, setDriveBackups] = useState<any[]>([]);
+  const [fetchingBackups, setFetchingBackups] = useState(false);
+  const [updatingDrive, setUpdatingDrive] = useState(false);
+  const [driveError, setDriveError] = useState<string | null>(null);
+  const [driveNeedsAuth, setDriveNeedsAuth] = useState(false);
 
   // Database State
   const [familyData, setFamilyData] = useState<Member[]>([]);
@@ -227,6 +244,236 @@ export default function App() {
     }
     setLoading(false);
   }, []);
+
+  // Initialize Firebase Auth on Mount
+  useEffect(() => {
+    const unsubscribe = initAuth(
+      (currentUser, token) => {
+        setUser(currentUser);
+        setDriveToken(token);
+        setDriveNeedsAuth(false);
+        fetchDriveBackups(token);
+      },
+      () => {
+        setUser(null);
+        setDriveToken(null);
+        setDriveNeedsAuth(true);
+      }
+    );
+    return () => unsubscribe();
+  }, []);
+
+  const fetchDriveBackups = async (token: string) => {
+    setFetchingBackups(true);
+    setDriveError(null);
+    try {
+      const q = encodeURIComponent("name contains 'silsilah_keluarga_' and mimeType = 'application/json' and trashed = false");
+      const url = `https://www.googleapis.com/drive/v3/files?q=${q}&fields=files(id,name,createdTime,size)&orderBy=createdTime+desc`;
+      const res = await fetch(url, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (!res.ok) {
+        throw new Error(`Gagal mengambil data dari Google Drive (${res.status} ${res.statusText})`);
+      }
+      const data = await res.json();
+      setDriveBackups(data.files || []);
+    } catch (err: any) {
+      console.error(err);
+      setDriveError(err.message || "Gagal memuat daftar cadangan dari Google Drive.");
+    } finally {
+      setFetchingBackups(false);
+    }
+  };
+
+  const handleGoogleSignIn = async () => {
+    setUpdatingDrive(true);
+    setDriveError(null);
+    try {
+      const result = await googleSignIn();
+      if (result) {
+        setUser(result.user);
+        setDriveToken(result.accessToken);
+        setDriveNeedsAuth(false);
+        setSuccessMsg("Berhasil masuk dengan Google!");
+        setTimeout(() => setSuccessMsg(""), 3000);
+        await fetchDriveBackups(result.accessToken);
+      }
+    } catch (err: any) {
+      console.error(err);
+      setDriveError(err.message || "Gagal memulai sesi Google. Silakan coba kembali.");
+    } finally {
+      setUpdatingDrive(false);
+    }
+  };
+
+  const handleGoogleLogout = async () => {
+    if (window.confirm("Apakah Anda yakin ingin keluar dari akun Google?")) {
+      await logout();
+      setUser(null);
+      setDriveToken(null);
+      setDriveBackups([]);
+      setDriveNeedsAuth(true);
+      setSuccessMsg("Sesi Google ditutup.");
+      setTimeout(() => setSuccessMsg(""), 3000);
+    }
+  };
+
+  const handleBackupToDrive = async () => {
+    const token = driveToken || (await getAccessToken());
+    if (!token) {
+      setDriveNeedsAuth(true);
+      alert("Sesi Anda kedaluwarsa. Silakan masuk ulang menggunakan Google.");
+      return;
+    }
+
+    if (familyData.length === 0) {
+      alert("Tidak ada data silsilah keluarga dalam local database untuk dicadangkan.");
+      return;
+    }
+
+    const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
+    const fileName = `silsilah_keluarga_backup_${timestamp}.json`;
+
+    if (!window.confirm(`Sistem akan membuat file cadangan baru bernama "${fileName}" di Google Drive Anda. Lanjutkan?`)) {
+      return;
+    }
+
+    setUpdatingDrive(true);
+    setDriveError(null);
+
+    try {
+      const createRes = await fetch("https://www.googleapis.com/drive/v3/files", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          name: fileName,
+          mimeType: "application/json"
+        })
+      });
+
+      if (!createRes.ok) {
+        throw new Error(`Gagal membuat metadata cadangan (${createRes.status})`);
+      }
+
+      const fileMeta = await createRes.json();
+      const fileId = fileMeta.id;
+
+      const uploadRes = await fetch(`https://www.googleapis.com/upload/drive/v3/files/${fileId}?uploadType=media`, {
+        method: "PATCH",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify(familyData, null, 2)
+      });
+
+      if (!uploadRes.ok) {
+        throw new Error(`Gagal mengunggah konten cadangan (${uploadRes.status})`);
+      }
+
+      setSuccessMsg("Cadangan silsilah berhasil diunggah ke Google Drive!");
+      setTimeout(() => setSuccessMsg(""), 4000);
+      await fetchDriveBackups(token);
+    } catch (err: any) {
+      console.error(err);
+      setDriveError(err.message || "Gagal mencadangkan data ke Google Drive.");
+    } finally {
+      setUpdatingDrive(false);
+    }
+  };
+
+  const handleRestoreFromDrive = async (fileId: string, fileName: string) => {
+    const token = driveToken || (await getAccessToken());
+    if (!token) {
+      setDriveNeedsAuth(true);
+      alert("Sesi Anda kedaluwarsa. Silakan masuk kembali.");
+      return;
+    }
+
+    const confirmed = window.confirm(
+      `PENTING: Apakah Anda yakin ingin memulihkan silsilah dari cadangan "${fileName}"?\n\nTindakan ini akan sepenuhnya MENIMPA data silsilah yang ada saat ini secara permanen!`
+    );
+    if (!confirmed) return;
+
+    setUpdatingDrive(true);
+    setDriveError(null);
+
+    try {
+      const res = await fetch(`https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+
+      if (!res.ok) {
+        throw new Error(`Gagal mengunduh berkas cadangan (${res.status})`);
+      }
+
+      const parsed = await res.json();
+      
+      if (!Array.isArray(parsed)) {
+        throw new Error("Format cadangan tidak valid: Berkas harus berupa array silsilah keluarga.");
+      }
+
+      if (parsed.length > 0 && typeof parsed[0].namaLengkap !== "string") {
+        throw new Error("Format cadangan tidak valid: Struktur data silsilah tidak dikenali.");
+      }
+
+      setFamilyData(parsed);
+      localStorage.setItem('local_family_tree', JSON.stringify(parsed));
+      
+      if (parsed.length > 0) {
+        setSelectedRootName(parsed[0].namaLengkap);
+      }
+
+      setSuccessMsg("Pemulihan silsilah dari Google Drive sukses!");
+      setTimeout(() => setSuccessMsg(""), 4000);
+      setActiveTab('dashboard');
+    } catch (err: any) {
+      console.error(err);
+      alert(`Gagal memulihkan cadangan: ${err.message || "Hubungan gagal terjalin ke Drive."}`);
+    } finally {
+      setUpdatingDrive(false);
+    }
+  };
+
+  const handleDeleteDriveFile = async (fileId: string, fileName: string) => {
+    const token = driveToken || (await getAccessToken());
+    if (!token) {
+      setDriveNeedsAuth(true);
+      alert("Sesi Anda kedaluwarsa. Silakan masuk kembali.");
+      return;
+    }
+
+    const confirmed = window.confirm(
+      `Apakah Anda yakin ingin menghapus berkas cadangan "${fileName}" dari Google Drive Anda secara permanen?`
+    );
+    if (!confirmed) return;
+
+    setUpdatingDrive(true);
+    setDriveError(null);
+
+    try {
+      const res = await fetch(`https://www.googleapis.com/drive/v3/files/${fileId}`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${token}` }
+      });
+
+      if (!res.ok) {
+        throw new Error(`Gagal menghapus berkas di Google Drive (${res.status})`);
+      }
+
+      setSuccessMsg("Berkas cadangan berhasil dihapus!");
+      setTimeout(() => setSuccessMsg(""), 3000);
+      await fetchDriveBackups(token);
+    } catch (err: any) {
+      console.error(err);
+      alert(`Gagal menghapus berkas: ${err.message}`);
+    } finally {
+      setUpdatingDrive(false);
+    }
+  };
 
   // Autofocus name field when modal opens
   useEffect(() => {
@@ -412,7 +659,7 @@ export default function App() {
     const parentsTrim = formParents.trim();
     const parentsLower = parentsTrim.toLowerCase();
     const childrenTrim = formChildren.trim();
-    const childrenLower = childrenLowerVal => childrenLowerVal ? childrenLowerVal.toLowerCase() : "";
+    const childrenList = childrenTrim.split(',').map(c => c.trim().toLowerCase()).filter(Boolean);
 
     // Prevents self-referential relations
     if (spouseLower === nameLower) {
@@ -423,7 +670,7 @@ export default function App() {
       alert(`Error: Nama orang tua tidak boleh sama dengan nama diri sendiri ("${nameTrim}")!`);
       return;
     }
-    if (childrenTrim.toLowerCase() === nameLower) {
+    if (childrenList.includes(nameLower)) {
       alert(`Error: Nama anak tidak boleh sama dengan nama diri sendiri ("${nameTrim}")!`);
       return;
     }
@@ -433,12 +680,12 @@ export default function App() {
       alert(`Error: Orang tua ("${parentsTrim}") tidak boleh sama dengan pasangan ("${spouseTrim}")!`);
       return;
     }
-    if (spouseTrim && childrenTrim && spouseLower === childrenTrim.toLowerCase()) {
-      alert(`Error: Anak ("${childrenTrim}") tidak boleh sama dengan pasangan ("${spouseTrim}")!`);
+    if (spouseTrim && childrenTrim && childrenList.includes(spouseLower)) {
+      alert(`Error: Anak tidak boleh sama dengan pasangan ("${spouseTrim}")!`);
       return;
     }
-    if (parentsTrim && childrenTrim && parentsLower === childrenTrim.toLowerCase()) {
-      alert(`Error: Orang tua ("${parentsTrim}") tidak boleh sama dengan anak ("${childrenTrim}")!`);
+    if (parentsTrim && childrenTrim && childrenList.includes(parentsLower)) {
+      alert(`Error: Orang tua ("${parentsTrim}") tidak boleh sama dengan anak!`);
       return;
     }
 
@@ -1156,6 +1403,12 @@ export default function App() {
             >
               <Database className="w-5 h-5" /> Kelola Records Data
             </button>
+            <button 
+              onClick={() => { setActiveTab('drive'); setMobileSidebarOpen(false); }}
+              className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all font-medium text-sm text-left ${activeTab === 'drive' ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-300 hover:bg-white/5 hover:text-white'}`}
+            >
+              <Cloud className="w-5 h-5 text-indigo-400 animate-bounce" /> Cloud Google Drive
+            </button>
           </nav>
 
           <div className="mt-auto bg-slate-900/60 p-4 rounded-xl border border-white/5">
@@ -1843,6 +2096,324 @@ export default function App() {
 
             </div>
             )}
+
+          {/* TAB 4: GOOGLE DRIVE CLOUD INTEGRATION */}
+          {activeTab === 'drive' && (
+            <div className="space-y-6">
+              
+              {/* Header Banner */}
+              <div className="bg-gradient-to-r from-indigo-850 via-slate-900 to-indigo-950 text-white rounded-3xl p-6 lg:p-8 shadow-xl border border-indigo-500/20 flex flex-col md:flex-row items-start md:items-center justify-between gap-6 relative overflow-hidden">
+                <div className="absolute top-0 right-0 p-8 opacity-[0.02] pointer-events-none">
+                  <Cloud className="w-56 h-56" />
+                </div>
+                <div className="relative z-10 space-y-2">
+                  <div className="flex items-center gap-2">
+                    <span className="bg-amber-400 text-slate-950 text-[10px] font-mono px-2.5 py-0.5 rounded-full font-extrabold uppercase tracking-widest">
+                      Google OAuth Aktif
+                    </span>
+                    <span className="bg-indigo-500/20 text-indigo-300 text-[10px] font-mono px-2 py-0.5 rounded-full font-semibold">
+                      v1.0.0
+                    </span>
+                  </div>
+                  <h1 className="text-2xl lg:text-3xl font-extrabold tracking-tight">
+                    Cloud Google Drive Sync
+                  </h1>
+                  <p className="text-indigo-150 text-sm max-w-2xl leading-relaxed">
+                    Sinkronisasikan, cadangkan, dan pulihkan bagan silsilah keluarga Anda secara instan menggunakan infrastruktur cloud pribadi Google Drive Anda yang aman dan tepercaya.
+                  </p>
+                </div>
+              </div>
+
+              {driveError && (
+                <div className="bg-rose-50 border border-rose-150 text-rose-850 p-4 rounded-2xl flex items-start gap-3 shadow-xs">
+                  <AlertCircle className="w-5 h-5 text-rose-500 mt-0.5 shrink-0" />
+                  <div>
+                    <h5 className="font-bold text-sm">Kesalahan Integrasi Cloud</h5>
+                    <p className="text-xs text-rose-700 mt-1 leading-relaxed">{driveError}</p>
+                  </div>
+                </div>
+              )}
+
+              {/* Login/Authentication & Account Panel */}
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                
+                {/* Auth Area */}
+                <div className="bg-white p-6 rounded-3xl shadow-sm border border-slate-150 lg:col-span-4 flex flex-col justify-between min-h-[220px]">
+                  <div>
+                    <h3 className="text-base font-extrabold text-slate-900 mb-1 flex items-center gap-2">
+                      Sesi Hubungan Google
+                    </h3>
+                    <p className="text-xs text-slate-400 leading-relaxed mb-6">
+                      Sistem menggunakan Firebase Auth ramah privasi untuk mengakses berkas cadangan di Google Drive atas izin Anda.
+                    </p>
+                  </div>
+
+                  {driveNeedsAuth || !user ? (
+                    <div>
+                      {/* Standard Google Sign-In Styled Button */}
+                      <button 
+                        onClick={handleGoogleSignIn}
+                        disabled={updatingDrive}
+                        className="w-full bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200 hover:border-slate-350 transition-all font-semibold rounded-2xl py-3 px-4 flex items-center justify-center gap-3 shadow-xs cursor-pointer disabled:opacity-50"
+                      >
+                        <svg className="w-5 h-5 shrink-0" version="1.1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48">
+                          <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"></path>
+                          <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"></path>
+                          <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"></path>
+                          <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"></path>
+                        </svg>
+                        <span className="text-sm">Masuk dengan Google</span>
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="space-y-4">
+                      <div className="flex items-center gap-3 p-3 bg-slate-50 rounded-2xl border border-slate-100">
+                        <img 
+                          src={user.photoURL || `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(user.displayName || "G")}`} 
+                          alt="Google Avatar" 
+                          referrerPolicy="no-referrer"
+                          className="w-10 h-10 rounded-full border border-indigo-200"
+                        />
+                        <div className="min-w-0">
+                          <h4 className="text-xs font-extrabold text-slate-800 truncate leading-none mb-1">
+                            {user.displayName || "Pengguna Google"}
+                          </h4>
+                          <p className="text-[10px] text-slate-400 truncate leading-none">
+                            {user.email}
+                          </p>
+                        </div>
+                      </div>
+                      
+                      <button 
+                        onClick={handleGoogleLogout}
+                        disabled={updatingDrive}
+                        className="w-full bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 transition-colors font-semibold rounded-2xl py-2 px-3 flex items-center justify-center gap-2 text-xs cursor-pointer disabled:opacity-50"
+                      >
+                        <LogOut className="w-3.5 h-3.5" /> Keluar dari Akun Google
+                      </button>
+                    </div>
+                  )}
+                </div>
+
+                {/* Backup Trigger Block */}
+                <div className="bg-white p-6 rounded-3xl shadow-sm border border-slate-150 lg:col-span-8 flex flex-col justify-between min-h-[220px]">
+                  <div>
+                    <h3 className="text-base font-extrabold text-slate-900 mb-1 flex items-center gap-2">
+                      Fungsi Pencadangan Silsilah
+                    </h3>
+                    <p className="text-xs text-slate-400 leading-relaxed mb-4">
+                      Mengunggah seluruh catatan records ({familyData.length} anggota) yang aktif saat ini dari database lokal dan menyimpannya sebagai fail JSON steril di Google Drive Anda.
+                    </p>
+                    <div className="bg-indigo-50/60 border border-indigo-100 text-indigo-800 p-3 rounded-2xl text-[11px] leading-relaxed flex items-start gap-2 max-w-2xl">
+                      <span className="text-xs">💡</span>
+                      <div>
+                        Setiap cadangan disimpan sebagai fail mandiri yang diberi struktur waktu unik, sehingga Anda tidak perlu khawatir kehilangan riwayat versi silsilah sebelumnya.
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex flex-col sm:flex-row gap-3 mt-4">
+                    <button
+                      onClick={handleBackupToDrive}
+                      disabled={driveNeedsAuth || !user || updatingDrive}
+                      className="bg-indigo-600 hover:bg-indigo-700 text-white disabled:bg-slate-100 disabled:text-slate-400 font-bold px-6 py-3 rounded-2xl transition-all shadow-md flex items-center justify-center gap-2 text-sm cursor-pointer disabled:opacity-50"
+                    >
+                      <CloudUpload className="w-4 h-4" />
+                      {updatingDrive ? "Sedang Mengunggah..." : "Buat Cadangan Baru Sekarang"}
+                    </button>
+                    
+                    {user && (
+                      <button
+                        onClick={() => fetchDriveBackups(driveToken || "")}
+                        disabled={fetchingBackups || updatingDrive}
+                        className="bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 hover:border-slate-300 font-bold px-5 py-3 rounded-2xl transition-all flex items-center justify-center gap-2 text-sm cursor-pointer"
+                      >
+                        <RefreshCw className={`w-4 h-4 ${fetchingBackups ? "animate-spin" : ""}`} />
+                        Segarkan Cadangan
+                      </button>
+                    )}
+                  </div>
+                </div>
+
+              </div>
+
+              {/* LIST OF BACKUPS FROM GOOGLE DRIVE */}
+              <div className="bg-white rounded-3xl p-6 shadow-sm border border-slate-150">
+                <div className="flex items-center justify-between mb-5">
+                  <div>
+                    <h3 className="text-lg font-extrabold text-slate-900 flex items-center gap-2">
+                      <FolderOpen className="w-5 h-5 text-indigo-600" />
+                      File Cadangan Silsilah di Google Drive
+                    </h3>
+                    <p className="text-xs text-slate-400 leading-none mt-1">
+                      Daftar snapshot silsilah keluarga format JSON hasil deteksi aman di akun Anda.
+                    </p>
+                  </div>
+                </div>
+
+                {driveNeedsAuth || !user ? (
+                  <div className="border border-dashed border-slate-200 rounded-2xl p-10 text-center text-slate-400">
+                    <Cloud className="w-10 h-10 mx-auto text-slate-300 mb-2 animate-bounce" />
+                    <p className="text-sm font-semibold text-slate-500">Google Cloud Belum Tersambung</p>
+                    <p className="text-xs text-slate-400 mt-1 max-w-sm mx-auto">
+                      Silakan hubungkan akun Google Anda terlebih dahulu di panel sebelah kiri untuk memuat data cadangan.
+                    </p>
+                  </div>
+                ) : fetchingBackups ? (
+                  <div className="py-12 flex flex-col items-center justify-center text-slate-400 gap-3">
+                    <RefreshCw className="w-8 h-8 text-indigo-600 animate-spin" />
+                    <p className="text-xs font-mono">Memindai berkas di Google Drive Anda...</p>
+                  </div>
+                ) : driveBackups.length === 0 ? (
+                  <div className="border border-dashed border-slate-200 rounded-2xl p-10 text-center text-slate-400">
+                    <FolderOpen className="w-10 h-10 mx-auto text-slate-300 mb-2" />
+                    <p className="text-sm font-semibold text-slate-500">Tidak Menemukan Berkas Cadangan</p>
+                    <p className="text-xs text-slate-400 mt-1 max-w-md mx-auto">
+                      Belum mendeteksi file cadangan dengan awalan nama <span className="font-mono bg-slate-50 px-1 rounded">silsilah_keluarga_</span> di Google Drive Anda. Silakan klik "Buat Cadangan Baru" di atas!
+                    </p>
+                  </div>
+                ) : (
+                  <div className="overflow-x-auto rounded-xl border border-slate-100">
+                    <table className="w-full text-left border-collapse">
+                      <thead>
+                        <tr className="bg-slate-50 text-slate-500 font-mono text-[10px] tracking-wider uppercase border-b border-slate-100 font-extrabold">
+                          <th className="py-3.5 px-4 font-bold">Nama Berkas</th>
+                          <th className="py-3.5 px-4 font-bold">Dibuat Pada</th>
+                          <th className="py-3.5 px-4 font-bold">Ukuran</th>
+                          <th className="py-3.5 px-4 font-bold text-center">Aksi Pemulihan</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100 text-sm">
+                        {driveBackups.map((file) => {
+                          const kbVal = file.size ? `${(parseInt(file.size) / 1024).toFixed(2)} KB` : "N/A";
+                          const formattedDate = new Date(file.createdTime).toLocaleString("id-ID", {
+                            day: "numeric",
+                            month: "short",
+                            year: "numeric",
+                            hour: "2-digit",
+                            minute: "2-digit"
+                          });
+
+                          return (
+                            <tr key={file.id} className="hover:bg-slate-50/50 transition-colors">
+                              <td className="py-4 px-4 font-semibold text-slate-800 font-mono text-xs truncate max-w-xs lg:max-w-md">
+                                {file.name}
+                              </td>
+                              <td className="py-4 px-4 text-slate-500 text-xs">
+                                {formattedDate}
+                              </td>
+                              <td className="py-4 px-4 text-slate-400 text-xs font-mono">
+                                {kbVal}
+                              </td>
+                              <td className="py-4 px-4 text-center">
+                                <div className="flex items-center justify-center gap-2">
+                                  <button
+                                    onClick={() => handleRestoreFromDrive(file.id, file.name)}
+                                    disabled={updatingDrive}
+                                    title="Unduh & Pulihkan database lokal dari berkas cadangan ini"
+                                    className="bg-emerald-50 hover:bg-emerald-100 text-emerald-700 font-bold text-xs py-1.5 px-3 rounded-lg flex items-center gap-1 transition-colors cursor-pointer"
+                                  >
+                                    <CloudDownload className="w-3.5 h-3.5" />
+                                    Pulihkan
+                                  </button>
+                                  <button
+                                    onClick={() => handleDeleteDriveFile(file.id, file.name)}
+                                    disabled={updatingDrive}
+                                    title="Hapus berkas dari Google Drive secara permanen"
+                                    className="text-rose-500 hover:text-rose-700 hover:bg-rose-50 p-1.5 rounded-lg transition-colors cursor-pointer"
+                                  >
+                                    <Trash2 className="w-4 h-4" />
+                                  </button>
+                                </div>
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
+
+              {/* TUTORIAL DEPLOYMENT KE GOOGLE APPS SCRIPT / SPREADSHEETS */}
+              <div className="bg-slate-900 text-slate-100 rounded-3xl p-6 lg:p-8 shadow-xl border border-indigo-500/10 space-y-6">
+                <div>
+                  <div className="flex items-center gap-2 mb-1.5">
+                    <span className="bg-amber-400 text-slate-950 text-[10px] font-mono px-2.5 py-0.5 rounded-full font-extrabold uppercase tracking-widest">
+                      Panduan Integrasi Online
+                    </span>
+                    <span className="bg-blue-600/30 text-blue-300 text-[10px] font-mono px-2 py-0.5 rounded-full font-semibold">
+                      Google Sheets DB
+                    </span>
+                  </div>
+                  <h3 className="text-xl font-extrabold text-white flex items-center gap-2 font-sans tracking-tight">
+                    📱 Cara Memasang & Menghubungkan Silsilah ke Google Apps Script
+                  </h3>
+                  <p className="text-xs text-slate-400 leading-relaxed mt-1">
+                    Berikut adalah tata cara lengkap langkah-demi-langkah bagi Anda untuk memindahkan replika kode silsilah di workspace ini agar langsung aktif terhubung secara instan di Google Drive & Spreadsheet Anda:
+                  </p>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-xs text-slate-300">
+                  
+                  {/* Left Column: Code files copy */}
+                  <div className="space-y-4 bg-slate-950/60 p-5 rounded-2xl border border-white/5 shadow-inner">
+                    <h4 className="font-extrabold text-sm text-indigo-450 flex items-center gap-2 font-sans tracking-tight">
+                      <span className="flex items-center justify-center w-5 h-5 bg-indigo-500/20 text-indigo-400 rounded-full text-xs font-mono font-bold">1</span>
+                      Persiapkan Berkas Kode
+                    </h4>
+                    <p className="leading-relaxed text-slate-400">
+                      Anda memiliki 2 berkas utama di panel File Explorer editor Anda. Silakan salin manifests berkas tersebut ke editor Apps Script Anda:
+                    </p>
+                    <div className="space-y-3 pt-2">
+                      <div className="flex items-center justify-between p-3 bg-white/5 rounded-xl border border-white/5">
+                        <div className="min-w-0">
+                          <p className="font-mono text-xs text-slate-100 font-semibold mb-0.5">gas/Code.gs</p>
+                          <p className="text-[10px] text-slate-400 leading-relaxed">Mengontrol database, skrip lock concurrency, & referensi online.</p>
+                        </div>
+                      </div>
+                      <div className="flex items-center justify-between p-3 bg-white/5 rounded-xl border border-white/5">
+                        <div className="min-w-0">
+                          <p className="font-mono text-xs text-slate-100 font-semibold mb-0.5">gas/Index.html</p>
+                          <p className="text-[10px] text-slate-400 leading-relaxed">Antarmuka visual silsilah interaktif di Google Sheets.</p>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="bg-indigo-950/50 border border-indigo-900/30 rounded-xl p-3.5 text-[10.5px] text-indigo-300 leading-relaxed">
+                      💡 <strong>Petunjuk Salin</strong>: Anda dapat langsung melihat folder <code className="bg-slate-950 px-1 py-0.5 rounded text-white font-mono">gas/</code> pada navigasi sisi kiri di workspace editor AI Studio Anda untuk membuka dan menyalin kedua berkas tersebut secara utuh.
+                    </div>
+                  </div>
+
+                  {/* Right Column: Deployment Steps */}
+                  <div className="space-y-4 bg-slate-950/60 p-5 rounded-2xl border border-white/5 shadow-inner">
+                    <h4 className="font-extrabold text-sm text-indigo-405 flex items-center gap-2 font-sans tracking-tight">
+                      <span className="flex items-center justify-center w-5 h-5 bg-indigo-500/20 text-indigo-455 rounded-full text-xs font-mono font-bold">2</span>
+                      Langkah Deployment di Google Drive
+                    </h4>
+                    <ol className="list-decimal list-inside space-y-2.5 leading-relaxed text-slate-350">
+                      <li>Buka layanan <strong>Google Sheets</strong> di browser Anda, kemudian buat sebuah spreadsheet baru.</li>
+                      <li>Di panel atas, pilih menu <strong>Ekstensi (Extensions)</strong> &gt; pilih <strong>Apps Script</strong>.</li>
+                      <li>Hapus kode default di file bawaan bernama <code>Code.gs</code>, lalu tempelkan seluruh isi file dari berkas <code>gas/Code.gs</code>.</li>
+                      <li>Klik menu <strong>+ (Tambah File)</strong> di samping kiri &gt; pilih opsi <strong>HTML</strong>. Namakan file baru tersebut <code>Index</code> (Pastikan tanpa ekstensi .html).</li>
+                      <li>Tempelkan seluruh kode dari berkas <code>gas/Index.html</code> ke editor file <code>Index.html</code> tersebut.</li>
+                      <li>Klik ikon <strong>Simpan Projek (Save)</strong> di atas untuk menyimpan perubahan silsilah.</li>
+                      <li>Klik tombol <strong>Terapkan (Deploy)</strong> di kanan atas &gt; pilih <strong>Penerapan Baru (New Deployment)</strong>.</li>
+                      <li>Pilih jenis deployment bernama <strong>Aplikasi Web (Web App)</strong>. Atur hak akses:
+                        <ul className="list-disc list-inside ml-4 mt-1 space-y-0.5 text-[10.5px] text-slate-400">
+                          <li><em>Execute as:</em> <strong>Me (Akun Google Anda)</strong></li>
+                          <li><em>Who has access:</em> <strong>Anyone (Siapa saja)</strong></li>
+                        </ul>
+                      </li>
+                      <li>Tekan tombol <strong>Terapkan / Deploy</strong>, lalu selesaikan otorisasi izin akses data Google Anda.</li>
+                      <li>Salin <strong>URL Web App</strong> Anda yang berakhiran <code>/exec</code> untuk langsung berinteraksi dengan Silsilah Keluarga interaktif Anda secara online!</li>
+                    </ol>
+                  </div>
+
+                </div>
+              </div>
+
+            </div>
+          )}
 
         </main>
       </div>

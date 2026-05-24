@@ -1633,7 +1633,7 @@
       const namaLower = member.namaLengkap.toLowerCase();
       const pasanganLower = member.pasangan.toLowerCase();
       const orangTuaLower = member.orangTua.toLowerCase();
-      const anakLower = member.anak.toLowerCase();
+      const childrenList = member.anak.split(',').map(c => c.trim().toLowerCase()).filter(Boolean);
 
       // Prevents self-referential relations
       if (pasanganLower === namaLower) {
@@ -1646,7 +1646,7 @@
         resetFormButton();
         return;
       }
-      if (anakLower === namaLower) {
+      if (childrenList.includes(namaLower)) {
         Swal.fire("Gagal Validasi", "Nama anak tidak boleh sama dengan nama diri sendiri!", "warning");
         resetFormButton();
         return;
@@ -1658,13 +1658,13 @@
         resetFormButton();
         return;
       }
-      if (member.pasangan && member.anak && pasanganLower === anakLower) {
-        Swal.fire("Gagal Validasi", `Anak ("${member.anak}") tidak boleh sama dengan pasangan ("${member.pasangan}")!`, "warning");
+      if (member.pasangan && member.anak && childrenList.includes(pasanganLower)) {
+        Swal.fire("Gagal Validasi", `Anak tidak boleh sama dengan pasangan ("${member.pasangan}")!`, "warning");
         resetFormButton();
         return;
       }
-      if (member.orangTua && member.anak && orangTuaLower === anakLower) {
-        Swal.fire("Gagal Validasi", `Orang tua ("${member.orangTua}") tidak boleh sama dengan anak ("${member.anak}")!`, "warning");
+      if (member.orangTua && member.anak && childrenList.includes(orangTuaLower)) {
+        Swal.fire("Gagal Validasi", `Orang tua ("${member.orangTua}") tidak boleh sama dengan anak!`, "warning");
         resetFormButton();
         return;
       }
