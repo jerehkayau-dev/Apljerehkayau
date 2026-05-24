@@ -1,0 +1,1957 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Silsilah Keluarga - Digital Hub</title>
+  
+  <!-- CSS Bootstrap 5 -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <!-- Ikon Bootstrap -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+  <!-- SweetAlert2 -->
+  <link href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css" rel="stylesheet">
+  <!-- Google Fonts - Inter -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+  <style>
+    :root {
+      --primary-color: #0d6efd;
+      --secondary-color: #0a58ca;
+      --accent-color: #e9ecef;
+      --sidebar-width: 280px;
+      --dark-blue: #0b2545;
+      --soft-bg: #f8f9fc;
+    }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: var(--soft-bg);
+      color: #333;
+      overflow-x: hidden;
+    }
+
+    /* Sidebar Styling */
+    .sidebar {
+      position: fixed;
+      top: 0;
+      bottom: 0;
+      left: 0;
+      width: var(--sidebar-width);
+      z-index: 1000;
+      background: linear-gradient(135deg, #0f2b5c 0%, #05142b 100%);
+      color: #fff;
+      transition: all 0.3s ease;
+      box-shadow: 4px 0 15px rgba(0,0,0,0.1);
+      display: flex;
+      flex-direction: column;
+    }
+
+    .sidebar-header {
+      padding: 1.5rem;
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+    }
+
+    .sidebar-menu {
+      padding: 1rem 0;
+      flex-grow: 1;
+      overflow-y: auto;
+    }
+
+    .nav-item-custom {
+      padding: 0.75rem 1.5rem;
+      color: rgba(255, 255, 255, 0.75);
+      text-decoration: none;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      transition: all 0.2s ease;
+      cursor: pointer;
+      border-left: 4px solid transparent;
+    }
+
+    .nav-item-custom:hover, .nav-item-custom.active {
+      color: #fff;
+      background-color: rgba(255, 255, 255, 0.08);
+      border-left-color: #39b5ff;
+    }
+
+    .sidebar-footer {
+      padding: 1rem;
+      background-color: rgba(0,0,0,0.2);
+      font-size: 0.8rem;
+      text-align: center;
+      color: rgba(255,255,255,0.5);
+      border-top: 1px solid rgba(255,255,255,0.08);
+    }
+
+    /* Main Content Styling */
+    .main-content {
+      margin-left: var(--sidebar-width);
+      min-height: 100vh;
+      transition: all 0.3s ease;
+      padding: 2rem;
+    }
+
+    .navbar-mobile {
+      display: none;
+      background-color: #0b2545;
+      padding: 1rem;
+    }
+
+    /* Card Panels */
+    .card-dashboard {
+      background: #fff;
+      border: none;
+      border-radius: 16px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.04);
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+      margin-bottom: 1.5rem;
+    }
+
+    .card-dashboard:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 25px rgba(0,0,0,0.08);
+    }
+
+    .welcome-card {
+      background: linear-gradient(135deg, #0d6efd 0%, #0d4b91 100%);
+      color: #fff;
+      border: none;
+      border-radius: 16px;
+      padding: 2rem;
+      margin-bottom: 2rem;
+      box-shadow: 0 6px 20px rgba(13, 110, 253, 0.2);
+    }
+
+    /* Avatar Tree Elements */
+    .avatar-circle {
+      width: 75px;
+      height: 75px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 3px solid #0d6efd;
+      background-color: #eaefff;
+    }
+
+    .avatar-circle-sm {
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 2px solid #6c757d;
+      background-color: #efefef;
+    }
+
+    /* Visual Tree Bagan Node Styling */
+    .tree-view-container {
+      background-color: #fff;
+      border-radius: 16px;
+      padding: 2.5rem;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.03);
+      overflow-x: auto;
+      min-height: 500px;
+      position: relative;
+    }
+
+    .tree-grid {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 2.5rem;
+      min-width: 800px;
+      transform-origin: top center;
+      transition: transform 0.1s ease-out;
+    }
+
+    .tree-row {
+      display: flex;
+      justify-content: center;
+      flex-wrap: nowrap;
+      gap: 2rem;
+      position: relative;
+    }
+
+    .tree-card {
+      background: #fff;
+      border: 2px solid #e2e8f0;
+      border-radius: 14px;
+      width: 250px;
+      padding: 1.25rem;
+      text-align: center;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.03);
+      transition: all 0.25s ease;
+      cursor: pointer;
+      position: relative;
+    }
+
+    .tree-card:hover {
+      border-color: #0d6efd;
+      transform: translateY(-4px);
+      box-shadow: 0 10px 20px rgba(13,110,253,0.1);
+    }
+
+    .tree-card.active-root {
+      border-color: #3182ce;
+      background-color: #ebf8ff;
+    }
+
+    .tree-card-badge {
+      position: absolute;
+      top: -10px;
+      left: 50%;
+      transform: translateX(-50%);
+      background-color: #0d6efd;
+      color: white;
+      font-size: 0.72rem;
+      padding: 2px 10px;
+      border-radius: 12px;
+      font-weight: 500;
+    }
+
+    .tree-connector-line {
+      width: 4px;
+      height: 2.5rem;
+      background-color: #cbd5e0;
+    }
+
+    /* Loading Overlay */
+    .loading-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(255, 255, 255, 0.85);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 10;
+      border-radius: 16px;
+    }
+
+    /* Modal Custom Styling */
+    .modal-content-custom {
+      border-radius: 18px;
+      border: none;
+      box-shadow: 0 15px 40px rgba(0,0,0,0.15);
+    }
+
+    /* Responsive Adjustments */
+    @media (max-width: 991.98px) {
+      .sidebar {
+        transform: translateX(-100%);
+      }
+      .sidebar.show {
+        transform: translateX(0);
+      }
+      .main-content {
+        margin-left: 0;
+        padding-top: 5rem;
+      }
+      .navbar-mobile {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        z-index: 1010;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- MOBILE HEADER -->
+  <header class="navbar-mobile">
+    <div class="d-flex align-items-center">
+      <button class="btn btn-outline-light me-3" id="btn-toggle-sidebar">
+        <i class="bi bi-list fs-4"></i>
+      </button>
+      <span class="text-white fw-bold fs-5"><i class="bi bi-diagram-3-fill me-2 text-info"></i> Silsilah Keluarga</span>
+    </div>
+    <span class="badge bg-warning text-dark px-3 py-2 fw-semibold" id="env-badge-mobile">Visual Mode</span>
+  </header>
+
+  <!-- OFFCANVAS SIDEBAR (MOBILE & DESKTOP) -->
+  <aside class="sidebar" id="app-sidebar">
+    <div class="sidebar-header d-flex justify-content-between align-items-center">
+      <div class="d-flex align-items-center gap-2">
+        <div class="p-2 bg-primary rounded-3 text-white">
+          <i class="bi bi-diagram-3-fill fs-4 d-block"></i>
+        </div>
+        <div>
+          <h6 class="mb-0 text-white fw-bold">Silsilah Ahli</h6>
+          <small class="text-white-50">Generasi Digital</small>
+        </div>
+      </div>
+      <button class="btn-close btn-close-white d-lg-none" id="btn-close-sidebar" aria-label="Close"></button>
+    </div>
+
+    <!-- Menu navigasi -->
+    <nav class="sidebar-menu">
+      <a class="nav-item-custom active" data-section="dashboard">
+        <i class="bi bi-grid-1x2-fill"></i> Dashboard Panel
+      </a>
+      <a class="nav-item-custom" data-section="treeview">
+        <i class="bi bi-diagram-2"></i> Tampilan Bagan Silsilah
+      </a>
+      <a class="nav-item-custom" data-section="datasection">
+        <i class="bi bi-table"></i> Manajemen Data
+      </a>
+    </nav>
+
+    <!-- Sidebar footer -->
+    <div class="p-3 bg-dark bg-opacity-25 border-top border-white-10 text-center m-2 rounded-2">
+      <p class="mb-1 text-light-50 font-monospace text-xs" style="font-size:0.75rem;">Status Konektivitas:</p>
+      <div class="d-flex align-items-center justify-content-center gap-2">
+        <span class="spinner-grow spinner-grow-sm text-success" role="status" id="conn-spinner"></span>
+        <span class="text-white fw-bold" id="env-badge">Local Database</span>
+      </div>
+    </div>
+
+    <div class="sidebar-footer">
+      <div>Silsilah Keluarga v1.2</div>
+      <div class="text-xs text-white-50 mt-1">&copy; 2026 Admin Panel</div>
+    </div>
+  </aside>
+
+  <!-- MAIN MAIN WRAPPER -->
+  <main class="main-content" id="main-content-layout">
+    
+    <!-- SECTION 1: DASHBOARD -->
+    <section class="section-container" id="section-dashboard">
+      <div class="welcome-card d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-3">
+        <div>
+          <h2 class="fw-bold mb-1"><i class="bi bi-house-heart"></i> Silsilah Keluarga Hub</h2>
+          <p class="mb-0 text-white-50">Selamat datang di dasbor administrasi sistem silsilah keluarga digital berdaya tinggi yang terintegrasi dengan Google Sheets.</p>
+        </div>
+        <div>
+          <button class="btn btn-warning px-4 py-2.5 fw-bold text-dark rounded-pill transition-all" onclick="openAddModal()">
+            <i class="bi bi-person-plus-fill me-2"></i> Tambah Anggota Baru
+          </button>
+        </div>
+      </div>
+
+      <!-- STATISTIK KARTU -->
+      <div class="row">
+        <!-- Card 1 -->
+        <div class="col-sm-6 col-xl-3 mb-4">
+          <div class="card-dashboard p-4">
+            <div class="d-flex justify-content-between align-items-center">
+              <div>
+                <span class="text-muted text-uppercase font-monospace tracking-wide" style="font-size: 0.75rem;">Total Anggota</span>
+                <h3 class="fw-bold mb-0 mt-1" id="stat-total-members">0</h3>
+              </div>
+              <div class="p-3 bg-primary bg-opacity-10 text-primary rounded-3">
+                <i class="bi bi-people-fill fs-3"></i>
+              </div>
+            </div>
+          </div>
+        </div>
+        <!-- Card 2 -->
+        <div class="col-sm-6 col-xl-3 mb-4">
+          <div class="card-dashboard p-4">
+            <div class="d-flex justify-content-between align-items-center">
+              <div>
+                <span class="text-muted text-uppercase font-monospace tracking-wide" style="font-size: 0.75rem;">Estimasi Generasi</span>
+                <h3 class="fw-bold mb-0 mt-1" id="stat-generations">0</h3>
+              </div>
+              <div class="p-3 bg-info bg-opacity-10 text-info rounded-3">
+                <i class="bi bi-layers-half fs-3"></i>
+              </div>
+            </div>
+          </div>
+        </div>
+        <!-- Card 3 -->
+        <div class="col-sm-6 col-xl-3 mb-4">
+          <div class="card-dashboard p-4">
+            <div class="d-flex justify-content-between align-items-center">
+              <div>
+                <span class="text-muted text-uppercase font-monospace tracking-wide" style="font-size: 0.75rem;">Anggota Hidup</span>
+                <h3 class="fw-bold mb-0 mt-1" id="stat-alive">0</h3>
+              </div>
+              <div class="p-3 bg-success bg-opacity-10 text-success rounded-3">
+                <i class="bi bi-heart-pulse-fill fs-3"></i>
+              </div>
+            </div>
+          </div>
+        </div>
+        <!-- Card 4 -->
+        <div class="col-sm-6 col-xl-3 mb-4">
+          <div class="card-dashboard p-4">
+            <div class="d-flex justify-content-between align-items-center">
+              <div>
+                <span class="text-muted text-uppercase font-monospace tracking-wide" style="font-size: 0.75rem;">Wafat</span>
+                <h3 class="fw-bold mb-0 mt-1" id="stat-deceased">0</h3>
+              </div>
+              <div class="p-3 bg-danger bg-opacity-10 text-danger rounded-3">
+                <i class="bi bi-journal-medical fs-3"></i>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- PANEL GRAFIK DAN DATA RINGKASAN -->
+      <div class="row">
+        <!-- Grafik Penyelidikan Kunjungan -->
+        <div class="col-lg-6 mb-4">
+          <div class="card-dashboard p-4 h-100">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+              <h5 class="fw-bold mb-0 text-dark"><i class="bi bi-graph-up-arrow me-2 text-primary"></i> Statistik Kunjungan Sistem</h5>
+              <span class="badge bg-light text-dark font-monospace">7 Hari Terakhir</span>
+            </div>
+            <div>
+              <canvas id="visitorChart" style="max-height: 240px;"></canvas>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tabel Ringkasan Aktivitas Silsilah -->
+        <div class="col-lg-6 mb-4">
+          <div class="card-dashboard p-4 h-100 position-relative" id="card-recent-data">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+              <h5 class="fw-bold mb-0 text-dark"><i class="bi bi-clock-history me-2 text-warning"></i> Input Terbaru</h5>
+              <button class="btn btn-link btn-sm text-decoration-none" onclick="navigateToSection('datasection')">Kelola Semua <i class="bi bi-arrow-right"></i></button>
+            </div>
+            <div class="table-responsive" style="max-height: 230px; overflow-y: auto;">
+              <table class="table align-middle table-sm">
+                <thead>
+                  <tr class="table-light">
+                    <th>Nama</th>
+                    <th>Hubungan</th>
+                    <th>Tgl Lahir</th>
+                  </tr>
+                </thead>
+                <tbody id="summary-data-list">
+                  <!-- Auto load -->
+                </tbody>
+              </table>
+              <div id="summary-empty" class="text-center py-4 d-none">
+                <i class="bi bi-database-exclamation fs-3 text-muted"></i>
+                <p class="text-muted mt-2 small">Tidak ada data anggota tersedia.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SECTION 2: TREE VIEW (BAGAN SILSILAH) -->
+    <section class="section-container d-none" id="section-treeview">
+      <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
+        <div>
+          <h4 class="fw-bold text-dark mb-1"><i class="bi bi-diagram-2-fill me-2 text-primary"></i> Bagan Silsilah Interaktif</h4>
+          <p class="text-muted mb-0">Atur visualisasi pohon keluarga dengan memilih tokoh akar silsilah pada menu dropdown.</p>
+        </div>
+        <div class="d-flex align-items-center gap-2">
+          <label for="tree-root-select" class="fw-semibold text-nowrap mb-0">Root Tokoh:</label>
+          <select id="tree-root-select" class="form-select w-auto" onchange="renderTreeView()">
+            <!-- Dynamic dropdown -->
+          </select>
+        </div>
+      </div>
+
+      <!-- Bagan Tree Visual -->
+      <div class="position-relative">
+        <!-- Touch Device Tip -->
+        <div class="d-block d-md-none text-center mb-3 bg-primary bg-opacity-10 text-primary border border-primary border-opacity-10 rounded-3 p-2 small select-none">
+          <i class="bi bi-info-circle-fill me-1 animate-pulse"></i> Sentuh &amp; cubit layar (pinch-to-zoom) dengan 2 jari untuk memperbesar bagan
+        </div>
+        <div class="tree-view-container" id="gas-tree-view-container">
+          <div id="tree-loading" class="loading-overlay d-none">
+            <div class="spinner-border text-primary" role="status"></div>
+          </div>
+
+          <div class="tree-grid" id="tree-grid-wrapper">
+            <!-- Dynamic Render Tree -->
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SECTION 3: MANAJEMEN DATA -->
+    <section class="section-container d-none" id="section-datasection">
+      <div class="card-dashboard p-4">
+        
+        <!-- HEADER KELOLA DATA -->
+        <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
+          <div>
+            <h4 class="fw-bold mb-1 text-dark"><i class="bi bi-database-fill me-2 text-primary"></i> Hub Data Keluarga</h4>
+            <p class="text-muted mb-0 small">Daftar lengkap seluruh silsilah keluarga. Urutan diurutkan dari masukan terbaru ke lama.</p>
+          </div>
+          <div class="d-flex flex-wrap gap-2">
+            <button class="btn btn-outline-danger" onclick="exportDataToPDF()"><i class="bi bi-file-earmark-pdf-fill me-1"></i> Cetak PDF Silsilah</button>
+            <button class="btn btn-primary" onclick="openAddModal()"><i class="bi bi-plus-circle-fill me-1"></i> Tambah Anggota</button>
+          </div>
+        </div>
+
+        <!-- FILTER PENCARIAN -->
+        <div class="row g-2 mb-3">
+          <div class="col-md-6">
+            <div class="input-group">
+              <span class="input-group-text bg-white border-end-0"><i class="bi bi-search text-muted"></i></span>
+              <input type="text" id="search-input" class="form-control border-start-0" placeholder="Pencarian Nama Anggota, Orang Tua, Pasangan..." onkeyup="filterTableData()">
+            </div>
+          </div>
+          <div class="col-md-3">
+            <select class="form-select" id="filter-status-hidup" onchange="filterTableData()">
+              <option value="all">Semua Status (Hidup & Wafat)</option>
+              <option value="hidup">Anggota Masih Hidup</option>
+              <option value="wafat">Anggota Sudah Wafat</option>
+            </select>
+          </div>
+          <div class="col-md-3">
+            <select class="form-select" id="filter-generasi" onchange="filterTableData()">
+              <option value="all">Semua Hubungan</option>
+              <option value="berpasangan">Memiliki Pasangan</option>
+              <option value="anak">Memiliki Anak</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- TABEL DATA UTAMA -->
+        <div class="table-responsive position-relative" style="min-height: 250px;">
+          <!-- Tabel Loading Overlay -->
+          <div id="table-loading" class="loading-overlay d-none">
+            <div class="text-center">
+              <div class="spinner-border text-primary" role="status"></div>
+              <p class="mt-2 text-muted small">Menghubungkan ke Database...</p>
+            </div>
+          </div>
+
+          <table class="table table-hover align-middle">
+            <thead class="table-light text-secondary">
+              <tr>
+                <th style="width: 70px;">Foto</th>
+                <th>Nama Lengkap</th>
+                <th>Pasangan</th>
+                <th>Orang Tua</th>
+                <th>Anak (Keturunan)</th>
+                <th>Tgl Lahir / Wafat</th>
+                <th style="width: 180px;" class="text-center">Aksi / Tambah Relasi</th>
+              </tr>
+            </thead>
+            <tbody id="table-data-list">
+              <!-- Auto filled -->
+            </tbody>
+          </table>
+
+          <!-- Empty State -->
+          <div id="table-empty" class="text-center py-5 d-none">
+            <i class="bi bi-inbox fs-1 text-muted opacity-50"></i>
+            <h5 class="mt-3 text-secondary">Data Masih Kosong</h5>
+            <p class="text-muted mb-4 small">Mulai tambahkan anggota keluarga pertama ke database digital Anda!</p>
+            <button class="btn btn-outline-primary btn-sm px-4" onclick="openAddModal()"><i class="bi bi-plus-circle me-1"></i> Tambah Sekarang</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- POP-UP MODAL: TAMBAH/EDIT ANGGOTA -->
+  <div class="modal fade" id="memberModal" tabindex="-1" aria-labelledby="memberModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+      <div class="modal-content modal-content-custom">
+        <form id="memberForm" onsubmit="handleFormSubmit(event)">
+          <div class="modal-header bg-primary text-white border-0 py-3" style="border-top-left-radius: 18px; border-top-right-radius: 18px;">
+            <h5 class="modal-title fw-bold" id="memberModalLabel"><i class="bi bi-person-fill-add me-2"></i> Tambah Anggota Silsilah</h5>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body p-4">
+            
+            <!-- Hidden Fields -->
+            <input type="hidden" id="form-is-update" value="false">
+            <input type="hidden" id="form-old-name" value="">
+            <input type="hidden" id="form-foto-base64" value="">
+
+            <div class="row g-3">
+              <!-- Nama Lengkap -->
+              <div class="col-md-6">
+                <label for="input-nama" class="form-label fw-semibold">Nama Lengkap <span class="text-danger">*</span></label>
+                <input type="text" id="input-nama" class="form-control" placeholder="Contoh: Budi Santoso, S.Kom" required>
+              </div>
+
+              <!-- Pasangan -->
+              <div class="col-md-6">
+                <label for="input-pasangan" class="form-label fw-semibold">Nama Pasangan (Suami/Istri)</label>
+                <input type="text" id="input-pasangan" class="form-control" placeholder="Contoh: Siti Rahma / Kosongkan jika belum ada">
+              </div>
+
+              <!-- Orang Tua -->
+              <div class="col-md-6">
+                <label for="input-orangtua" class="form-label fw-semibold">Nama Orang Tua (Ayah/Ibu)</label>
+                <input type="text" id="input-orangtua" class="form-control" placeholder="Masukkan nama Ayah atau Ibu">
+              </div>
+
+              <!-- Anak -->
+              <div class="col-md-6">
+                <label for="input-anak" class="form-label fw-semibold">Nama Anak</label>
+                <input type="text" id="input-anak" class="form-control" placeholder="Contoh: Roni Santoso, Linda Santoso (gunakan koma)">
+              </div>
+
+              <!-- Tanggal Lahir -->
+              <div class="col-md-6">
+                <label for="input-tgl-lahir" class="form-label fw-semibold">Tanggal Lahir <span class="text-danger">*</span></label>
+                <input type="date" id="input-tgl-lahir" class="form-control" required>
+              </div>
+
+              <!-- Tanggal Meninggal -->
+              <div class="col-md-6">
+                <div class="d-flex justify-content-between align-items-center mb-1">
+                  <label for="input-tgl-wafat" class="form-label fw-semibold mb-0">Tanggal Wafat (Meninggal)</label>
+                  <div class="form-check form-switch m-0">
+                    <input class="form-check-input" type="checkbox" role="switch" id="checkbox-wafat" onchange="toggleWafatInput()">
+                    <label class="form-check-label small" for="checkbox-wafat">Wafat</label>
+                  </div>
+                </div>
+                <input type="date" id="input-tgl-wafat" class="form-control" disabled>
+              </div>
+
+              <!-- Pasang Foto -->
+              <div class="col-md-12">
+                <label class="form-label fw-semibold">Foto Profil (JPG/PNG)</label>
+                <div class="d-flex align-items-center gap-3 border p-3 rounded" style="background-color: #fafbfc;">
+                  <div class="text-center">
+                    <img id="form-foto-preview" class="avatar-circle" src="https://api.dicebear.com/7.x/avataaars/svg?seed=preview" referrerPolicy="no-referrer" alt="Foto">
+                  </div>
+                  <div class="flex-grow-1">
+                    <input type="file" id="input-foto" class="form-control" accept="image/png, image/jpeg, image/jpg" onchange="encodeFotoProfil()">
+                    <div class="form-text mt-1 small">Rekomendasi rasio persegi, max kapasitas data 1MB.</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+          </div>
+          <div class="modal-footer border-0 p-4 pt-0">
+            <button type="button" class="btn btn-light px-4 py-2" data-bs-dismiss="modal">Batal</button>
+            <button type="submit" class="btn btn-primary px-5 py-2 fw-semibold" id="btn-submit-form">
+              <span id="btn-text">Simpan Anggota</span>
+              <span id="btn-spinner" class="spinner-border spinner-border-sm ms-2 d-none" role="status"></span>
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- SCRIPTS BUNDLE -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
+
+  <script>
+    // DETEKSI LOGIKA GAS ATAU BUKAN (LOCAL STORAGE FALLBACK)
+    const IS_GAS = (typeof google !== 'undefined' && typeof google.script !== 'undefined');
+    
+    // Default avatar fallback
+    const DEFAULT_AVATAR = "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150&auto=format&fit=crop";
+
+    function getAvatarUrl(foto, name) {
+      if (foto && foto.trim() !== '' && !foto.startsWith('http://images.unsplash.com') && !foto.startsWith('https://images.unsplash.com')) {
+        return foto;
+      }
+      return `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(name || 'family')}`;
+    }
+
+    // Global in-memory dataset
+    let familyData = [];
+    let bootstrapModal = null;
+    let visitorChartInstance = null;
+    let treeZoomLevel = 100;
+
+    // Mulai Aplikasi saat DOM terbaca
+    document.addEventListener("DOMContentLoaded", function() {
+      // Setup sidebar actions
+      setupSidebarEvents();
+      
+      // Inisialisasi visual modal Bootstrap
+      bootstrapModal = new bootstrap.Modal(document.getElementById('memberModal'));
+      
+      // Setup focused input autofocus
+      const myModalEl = document.getElementById('memberModal');
+      myModalEl.addEventListener('shown.bs.modal', function() {
+        document.getElementById('input-nama').focus();
+      });
+
+      // Deteksi setup visual environment badge
+      updateEnvBadge();
+
+      // Load data utama
+      fetchAndLoadData();
+
+      // Render visitor charts
+      renderVisitorChart();
+
+      // Aktifkan pinch-to-zoom pada silsilah
+      setupTouchZoom();
+    });
+
+    /**
+     * Mempersiapkan penanganan gesture pinch-to-zoom pada HP
+     */
+    function setupTouchZoom() {
+      const container = document.getElementById('gas-tree-view-container');
+      const grid = document.getElementById('tree-grid-wrapper');
+      if (!container || !grid) return;
+
+      let touchStartDist = null;
+      let startZoom = 100;
+
+      container.addEventListener('touchstart', function(e) {
+        if (e.touches.length === 2) {
+          touchStartDist = Math.hypot(
+            e.touches[0].clientX - e.touches[1].clientX,
+            e.touches[0].clientY - e.touches[1].clientY
+          );
+          startZoom = treeZoomLevel;
+        }
+      }, { passive: true });
+
+      container.addEventListener('touchmove', function(e) {
+        if (e.touches.length === 2 && touchStartDist !== null) {
+          if (e.cancelable) {
+            e.preventDefault();
+          }
+          const dist = Math.hypot(
+            e.touches[0].clientX - e.touches[1].clientX,
+            e.touches[0].clientY - e.touches[1].clientY
+          );
+          const ratio = dist / touchStartDist;
+          let targetZoom = Math.round(startZoom * ratio);
+          // Bound between 41% and 140%
+          treeZoomLevel = Math.min(140, Math.max(41, targetZoom));
+          grid.style.transform = `scale(${treeZoomLevel / 100})`;
+        }
+      }, { passive: false });
+
+      container.addEventListener('touchend', function() {
+        touchStartDist = null;
+      });
+      container.addEventListener('touchcancel', function() {
+        touchStartDist = null;
+      });
+    }
+
+    /**
+     * Sanitasi teks menghindari celah keamanan XSS (Anti-XSS Validation)
+     */
+    function escapeHTML(str) {
+      if (!str) return '';
+      return str.toString()
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#039;");
+    }
+
+    /**
+     * Deteksi Environment Web App
+     */
+    function updateEnvBadge() {
+      const badges = [document.getElementById('env-badge'), document.getElementById('env-badge-mobile')];
+      const spinner = document.getElementById('conn-spinner');
+      
+      if (IS_GAS) {
+        badges.forEach(b => {
+          if(b) {
+            b.textContent = "Google Sheets Live";
+            b.classList.remove('bg-warning');
+            b.classList.add('bg-success');
+          }
+        });
+        if(spinner) spinner.classList.add('text-success');
+      } else {
+        badges.forEach(b => {
+          if(b) {
+            b.textContent = "Local Fallback";
+            b.classList.remove('bg-success');
+            b.classList.add('bg-warning');
+          }
+        });
+        if(spinner) {
+          spinner.classList.remove('text-success');
+          spinner.classList.add('text-warning');
+        }
+      }
+    }
+
+    /**
+     * Tampilkan dan sembunyikan kolom tanggal wafat
+     */
+    function toggleWafatInput() {
+      const cb = document.getElementById('checkbox-wafat');
+      const input = document.getElementById('input-tgl-wafat');
+      if (cb.checked) {
+        input.removeAttribute('disabled');
+      } else {
+        input.setAttribute('disabled', 'true');
+        input.value = '';
+      }
+    }
+
+    /**
+     * Parsing berkas gambar profil ke format Base64
+     */
+    function encodeFotoProfil() {
+      const fileInput = document.getElementById('input-foto');
+      const previewImg = document.getElementById('form-foto-preview');
+      const base64Input = document.getElementById('form-foto-base64');
+
+      if (fileInput.files && fileInput.files[0]) {
+        const file = fileInput.files[0];
+        if (file.size > 1048576) {
+          Swal.fire("Ukuran Gambar Terlalu Besar", "Batas maksimal berukuran 1MB.", "warning");
+          fileInput.value = "";
+          return;
+        }
+
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          previewImg.src = e.target.result;
+          base64Input.value = e.target.result;
+        };
+        reader.readAsDataURL(file);
+      }
+    }
+
+    /**
+     * Navigasi tab & Sidebar responsive click
+     */
+    function setupSidebarEvents() {
+      const sidebarLinks = document.querySelectorAll('.nav-item-custom');
+      sidebarLinks.forEach(link => {
+        link.addEventListener('click', function(e) {
+          e.preventDefault();
+          const targetSection = this.getAttribute('data-section');
+          navigateToSection(targetSection);
+          
+          // Close mobile sidebar if open
+          document.getElementById('app-sidebar').classList.remove('show');
+        });
+      });
+
+      // Mobile button togglers
+      const btnToggle = document.getElementById('btn-toggle-sidebar');
+      const btnClose = document.getElementById('btn-close-sidebar');
+      const sidebar = document.getElementById('app-sidebar');
+
+      if(btnToggle) {
+        btnToggle.addEventListener('click', () => {
+          sidebar.classList.add('show');
+        });
+      }
+      if(btnClose) {
+        btnClose.addEventListener('click', () => {
+          sidebar.classList.remove('show');
+        });
+      }
+    }
+
+    function navigateToSection(sectionId) {
+      // Toggle active link
+      document.querySelectorAll('.nav-item-custom').forEach(item => {
+        if(item.getAttribute('data-section') === sectionId) {
+          item.classList.add('active');
+        } else {
+          item.classList.remove('active');
+        }
+      });
+
+      // Show hide sections
+      document.querySelectorAll('.section-container').forEach(sec => {
+        if(sec.getAttribute('id') === 'section-' + sectionId) {
+          sec.classList.remove('d-none');
+        } else {
+          sec.classList.add('d-none');
+        }
+      });
+
+      // Custom reload actions
+      if (sectionId === 'treeview') {
+        renderTreeView();
+      }
+    }
+
+    /**
+     * Simulasi Grafik Pengunjung (Chart.js)
+     */
+    function renderVisitorChart() {
+      const ctx = document.getElementById('visitorChart').getContext('2d');
+      if (visitorChartInstance) {
+        visitorChartInstance.destroy();
+      }
+      visitorChartInstance = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: ['Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab', 'Min'],
+          datasets: [{
+            label: 'Total Pengakses Silsilah',
+            data: [42, 65, 88, 54, 73, 110, 137],
+            backgroundColor: 'rgba(13, 110, 253, 0.85)',
+            borderColor: 'rgba(13, 110, 253, 1)',
+            borderWidth: 1,
+            borderRadius: 6
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: {
+              display: false
+            }
+          },
+          scales: {
+            y: {
+              beginAtZero: true,
+              grid: {
+                color: 'rgba(0, 0, 0, 0.05)'
+              }
+            },
+            x: {
+              grid: {
+                display: false
+              }
+            }
+          }
+        }
+      });
+    }
+
+    /**
+     * FETCHING DATA UTAMA (GOOGLE APPS SCRIPT / LOCAL FALLBACK SYSTEM)
+     */
+    function fetchAndLoadData() {
+      showLoadingIndicators(true);
+
+      if (IS_GAS) {
+        google.script.run
+          .withSuccessHandler(function(response) {
+            familyData = response || [];
+            processAndRenderDashboard();
+            showLoadingIndicators(false);
+          })
+          .withFailureHandler(function(err) {
+            Swal.fire("Koneksi Lemah", "Gagal memuat database Sheets: " + err.message, "error");
+            showLoadingIndicators(false);
+            loadLocalSampleData(); // Fallback to local on sheet error
+          })
+          .getData();
+      } else {
+        // Mode Fallback Local Storage
+        setTimeout(() => {
+          const localString = localStorage.getItem('local_family_tree');
+          if (localString) {
+            familyData = JSON.parse(localString);
+          } else {
+            // Load Dummy awal
+            familyData = getPrepopulateDummyData();
+            localStorage.setItem('local_family_tree', JSON.stringify(familyData));
+          }
+          processAndRenderDashboard();
+          showLoadingIndicators(false);
+        }, 800);
+      }
+    }
+
+    function showLoadingIndicators(isLoading) {
+      const tableLoad = document.getElementById('table-loading');
+      const treeLoad = document.getElementById('tree-loading');
+      if (tableLoad) {
+        isLoading ? tableLoad.classList.remove('d-none') : tableLoad.classList.add('d-none');
+      }
+      if (treeLoad) {
+        isLoading ? treeLoad.classList.remove('d-none') : treeLoad.classList.add('d-none');
+      }
+    }
+
+    function getPrepopulateDummyData() {
+      return [
+        {
+          namaLengkap: "H. Ahmad Dahlan",
+          pasangan: "Hj. Siti Aminah",
+          orangTua: "",
+          anak: "Budi Santoso, Rahayu Hasanah",
+          tanggalLahir: "1948-03-12",
+          tanggalMeninggal: "",
+          foto: ""
+        },
+        {
+          namaLengkap: "Hj. Siti Aminah",
+          pasangan: "H. Ahmad Dahlan",
+          orangTua: "",
+          anak: "Budi Santoso, Rahayu Hasanah",
+          tanggalLahir: "1953-07-22",
+          tanggalMeninggal: "",
+          foto: ""
+        },
+        {
+          namaLengkap: "Budi Santoso",
+          pasangan: "Siti Rahma",
+          orangTua: "H. Ahmad Dahlan",
+          anak: "Roni Santoso, Amalia Santoso",
+          tanggalLahir: "1975-11-05",
+          tanggalMeninggal: "",
+          foto: ""
+        },
+        {
+          namaLengkap: "Siti Rahma",
+          pasangan: "Budi Santoso",
+          orangTua: "",
+          anak: "Roni Santoso, Amalia Santoso",
+          tanggalLahir: "1980-08-14",
+          tanggalMeninggal: "",
+          foto: ""
+        },
+        {
+          namaLengkap: "Roni Santoso",
+          pasangan: "",
+          orangTua: "Budi Santoso",
+          anak: "",
+          tanggalLahir: "2002-04-10",
+          tanggalMeninggal: "",
+          foto: ""
+        },
+        {
+          namaLengkap: "Amalia Santoso",
+          pasangan: "",
+          orangTua: "Budi Santoso",
+          anak: "",
+          tanggalLahir: "2006-03-25",
+          tanggalMeninggal: "",
+          foto: ""
+        },
+        {
+          namaLengkap: "Rahayu Hasanah",
+          pasangan: "Ir. Handoko",
+          orangTua: "H. Ahmad Dahlan",
+          anak: "Doni Handoko",
+          tanggalLahir: "1979-05-18",
+          tanggalMeninggal: "",
+          foto: ""
+        },
+        {
+          namaLengkap: "Ir. Handoko",
+          pasangan: "Rahayu Hasanah",
+          orangTua: "",
+          anak: "Doni Handoko",
+          tanggalLahir: "1975-01-30",
+          tanggalMeninggal: "",
+          foto: ""
+        },
+        {
+          namaLengkap: "Doni Handoko",
+          pasangan: "",
+          orangTua: "Rahayu Hasanah",
+          anak: "",
+          tanggalLahir: "2008-09-02",
+          tanggalMeninggal: "",
+          foto: ""
+        }
+      ];
+    }
+
+    /**
+     * OLA DATA DAN RENDER INTERFACE
+     */
+    function processAndRenderDashboard() {
+      updateCalculatedStats();
+      renderDashboardSummaryList();
+      renderMainDataTable(familyData);
+      populateTreeRootDropdown();
+    }
+
+    function updateCalculatedStats() {
+      // 1. Total Anggota
+      const total = familyData.length;
+      document.getElementById('stat-total-members').textContent = total;
+
+      // 2. Hidup vs Wafat
+      let hidup = 0;
+      let wafat = 0;
+      familyData.forEach(item => {
+        if (item.tanggalMeninggal && item.tanggalMeninggal.trim() !== "") {
+          wafat++;
+        } else {
+          hidup++;
+        }
+      });
+      document.getElementById('stat-alive').textContent = hidup;
+      document.getElementById('stat-deceased').textContent = wafat;
+
+      // 3. Estimasi Level Generasi
+      const generations = calculateGenerationsEstimate();
+      document.getElementById('stat-generations').textContent = generations;
+    }
+
+    /**
+     * Hitung Angka Estimasi Level Generasi Silsilah
+     */
+    function calculateGenerationsEstimate() {
+      if (familyData.length === 0) return 0;
+      
+      // Temukan tokoh root paling tua (tanpa orang tua)
+      let roots = familyData.filter(d => !d.orangTua || d.orangTua.trim() === "");
+      if (roots.length === 0) return 1;
+
+      // Jalankan BFS untuk mengukur kedalaman pohon terjauh
+      let maxDepth = 1;
+      
+      function getChildrenOf(parentName) {
+        if(!parentName) return [];
+        return familyData.filter(d => d.orangTua && d.orangTua.trim().toLowerCase() === parentName.trim().toLowerCase());
+      }
+
+      roots.forEach(r => {
+        let queue = [{ name: r.namaLengkap, depth: 1 }];
+        while(queue.length > 0) {
+          let curr = queue.shift();
+          if (curr.depth > maxDepth) {
+            maxDepth = curr.depth;
+          }
+          let kids = getChildrenOf(curr.name);
+          kids.forEach(k => {
+            queue.push({ name: k.namaLengkap, depth: curr.depth + 1 });
+          });
+        }
+      });
+
+      return maxDepth;
+    }
+
+    /**
+     * Ringkasan input terbaru di beranda dashboard
+     */
+    function renderDashboardSummaryList() {
+      const tbody = document.getElementById('summary-data-list');
+      const emptyDiv = document.getElementById('summary-empty');
+      tbody.innerHTML = '';
+
+      if (familyData.length === 0) {
+        emptyDiv.classList.remove('d-none');
+        return;
+      }
+      emptyDiv.classList.add('d-none');
+
+      // Tampilkan 4 data teratas (indeks terbaru, karena nanti di render tabel dibalik)
+      const newestData = [...familyData].reverse().slice(0, 4);
+
+      newestData.forEach(item => {
+        const tr = document.createElement('tr');
+        
+        let statusBadge = `<span class="badge bg-success-subtle text-success">Hidup</span>`;
+        if (item.tanggalMeninggal && item.tanggalMeninggal.trim() !== '') {
+          statusBadge = `<span class="badge bg-danger-subtle text-danger">Wafat</span>`;
+        }
+
+        tr.innerHTML = `
+          <td>
+            <div class="d-flex align-items-center gap-2">
+              <img class="avatar-circle-sm" src="${getAvatarUrl(item.foto, item.namaLengkap)}" alt="...">
+              <div>
+                <div class="fw-bold text-dark text-xs">${escapeHTML(item.namaLengkap)}</div>
+                <small class="text-muted" style="font-size:0.7rem;">Lahir: ${escapeHTML(item.tanggalLahir)}</small>
+              </div>
+            </div>
+          </td>
+          <td>${statusBadge}</td>
+          <td class="font-monospace text-xs">${escapeHTML(item.tanggalLahir)}</td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    /**
+     * Render Tabel Utama (Mendahulukan Urutan Masukan Baru)
+     */
+    function renderMainDataTable(dataToRender) {
+      const tbody = document.getElementById('table-data-list');
+      const emptyState = document.getElementById('table-empty');
+      tbody.innerHTML = '';
+
+      if (!dataToRender || dataToRender.length === 0) {
+        emptyState.classList.remove('d-none');
+        return;
+      }
+      emptyState.classList.add('d-none');
+
+      // Sort Newest to Oldest (reverse array masukan)
+      const sortedData = [...dataToRender].reverse();
+
+      sortedData.forEach(item => {
+        const tr = document.createElement('tr');
+        
+        let birthDeathStr = `<span class="badge bg-success bg-opacity-10 text-success"><i class="bi bi-heart-fill"></i> Hidup</span><br><small class="text-muted font-monospace">${item.tanggalLahir}</small>`;
+        if(item.tanggalMeninggal && item.tanggalMeninggal.trim() !== "") {
+          birthDeathStr = `<span class="badge bg-dark bg-opacity-10 text-dark"><i class="bi bi-shield-x"></i> Wafat</span><br><small class="text-danger font-monospace">${item.tanggalLahir} s/d ${item.tanggalMeninggal}</small>`;
+        }
+
+        const formattedAnak = item.anak ? item.anak.split(',').map(a => `<span class="badge bg-light text-dark border me-1 my-1">${escapeHTML(a.trim())}</span>`).join('') : '<em class="text-muted small">- Tidak ada -</em>';
+
+        tr.innerHTML = `
+          <td>
+            <img class="avatar-circle-sm" src="${getAvatarUrl(item.foto, item.namaLengkap)}" alt="profil" style="width: 48px; height: 48px; object-fit: cover; border-radius: 50%;">
+          </td>
+          <td>
+            <div class="fw-bold text-primary">${escapeHTML(item.namaLengkap)}</div>
+          </td>
+          <td>
+            ${item.pasangan ? `<i class="bi bi-heartbreak-fill text-danger me-1"></i> ${escapeHTML(item.pasangan)}` : '<em class="text-muted small">- Tidak ada -</em>'}
+          </td>
+          <td>
+            ${item.orangTua ? `<i class="bi bi-person-up text-muted me-1"></i> ${escapeHTML(item.orangTua)}` : '<em class="text-muted small">- Tidak ada -</em>'}
+          </td>
+          <td>
+            <div class="d-flex flex-wrap">${formattedAnak}</div>
+          </td>
+          <td>
+            ${birthDeathStr}
+          </td>
+          <td>
+            <div class="d-flex justify-content-center gap-1 flex-wrap">
+              <!-- Dropdown Tambah Relasi -->
+              <div class="dropdown">
+                <button class="btn btn-outline-primary btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                  + Relasi
+                </button>
+                <ul class="dropdown-menu">
+                  <li><a class="dropdown-item" href="#" onclick="quickAddRelation('${escapeHTML(item.namaLengkap)}', 'partner')">Tambah Pasangan</a></li>
+                  <li><a class="dropdown-item" href="#" onclick="quickAddRelation('${escapeHTML(item.namaLengkap)}', 'child')">Tambah Anak</a></li>
+                </ul>
+              </div>
+              <button class="btn btn-outline-warning btn-sm" onclick="editMember('${escapeHTML(item.namaLengkap)}')">
+                <i class="bi bi-pencil-fill"></i>
+              </button>
+              <button class="btn btn-outline-danger btn-sm" onclick="deleteMember('${escapeHTML(item.namaLengkap)}')">
+                <i class="bi bi-trash-fill"></i>
+              </button>
+            </div>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    /**
+     * FILTER TABLE DATA (Pencarian & Seleksi Status)
+     */
+    function filterTableData() {
+      const query = document.getElementById('search-input').value.toLowerCase().trim();
+      const statusHidup = document.getElementById('filter-status-hidup').value;
+      const statusRelasi = document.getElementById('filter-generasi').value;
+
+      let filtered = familyData.filter(item => {
+        // Query match
+        const namaMatch = item.namaLengkap && item.namaLengkap.toLowerCase().includes(query);
+        const pasanganMatch = item.pasangan && item.pasangan.toLowerCase().includes(query);
+        const ortuMatch = item.orangTua && item.orangTua.toLowerCase().includes(query);
+        const anakMatch = item.anak && item.anak.toLowerCase().includes(query);
+        const matchText = namaMatch || pasanganMatch || ortuMatch || anakMatch;
+
+        // Status hidup/wafat filter
+        let matchStatus = true;
+        const existsWafat = item.tanggalMeninggal && item.tanggalMeninggal.trim() !== "";
+        if (statusHidup === 'hidup') {
+          matchStatus = !existsWafat;
+        } else if (statusHidup === 'wafat') {
+          matchStatus = existsWafat;
+        }
+
+        // Status Relasi filter
+        let matchRelasi = true;
+        if (statusRelasi === 'berpasangan') {
+          matchRelasi = item.pasangan && item.pasangan.trim() !== "";
+        } else if (statusRelasi === 'anak') {
+          matchRelasi = item.anak && item.anak.trim() !== "";
+        }
+
+        return matchText && matchStatus && matchRelasi;
+      });
+
+      renderMainDataTable(filtered);
+    }
+
+    /**
+     * ISI DROP DOWN ROOT BAGAN SILSILAH
+     */
+    function populateTreeRootDropdown() {
+      const select = document.getElementById('tree-root-select');
+      const prevVal = select.value;
+      select.innerHTML = '';
+
+      if (familyData.length === 0) {
+        const opt = document.createElement('option');
+        opt.value = "";
+        opt.textContent = "Data silsilah kosong";
+        select.appendChild(opt);
+        return;
+      }
+
+      // Filter tokoh tertua (yang tidak memiliki data 'orangTua' tertulis) sebagai usulan prioritas teratas
+      let elders = familyData.filter(d => !d.orangTua || d.orangTua.trim() === "");
+      let others = familyData.filter(d => d.orangTua && d.orangTua.trim() !== "");
+
+      // Daftarkan ke dropdown
+      elders.forEach(item => {
+        const opt = document.createElement('option');
+        opt.value = item.namaLengkap;
+        opt.textContent = item.namaLengkap + " (Tetua)";
+        select.appendChild(opt);
+      });
+
+      others.forEach(item => {
+        const opt = document.createElement('option');
+        opt.value = item.namaLengkap;
+        opt.textContent = item.namaLengkap;
+        select.appendChild(opt);
+      });
+
+      // Pilih nilai sebelumnya atau default ke tetua pertama
+      if (prevVal && familyData.some(d => d.namaLengkap === prevVal)) {
+        select.value = prevVal;
+      } else if (elders.length > 0) {
+        select.value = elders[0].namaLengkap;
+      } else {
+        select.value = familyData[0].namaLengkap;
+      }
+    }
+
+    /**
+     * DYNAMIC TREE RENDER (Pohon Hubungan Silsilah Keluarga)
+     */
+    function renderTreeView() {
+      const grid = document.getElementById('tree-grid-wrapper');
+      grid.innerHTML = '';
+
+      const rootName = document.getElementById('tree-root-select').value;
+      if (!rootName) {
+        grid.innerHTML = `<div class="text-center py-5 text-muted">Sila tambahkan data keluarga untuk melihat bagan.</div>`;
+        return;
+      }
+
+      // Cari record objek root
+      const rootItem = familyData.find(d => d.namaLengkap.trim().toLowerCase() === rootName.trim().toLowerCase());
+      if (!rootItem) return;
+
+      // 1. CARI ORANG TUA (Level 1 - Teratas)
+      let parentsNodes = [];
+      if (rootItem.orangTua && rootItem.orangTua.trim() !== "") {
+        // Cari apakah objek Orang Tua tersebut terdaftar juga di database
+        const pObj = familyData.find(d => d.namaLengkap.trim().toLowerCase() === rootItem.orangTua.trim().toLowerCase());
+        if (pObj) {
+          parentsNodes.push(pObj);
+          if (pObj.pasangan && pObj.pasangan.trim() !== "") {
+            const pSpouse = familyData.find(d => d.namaLengkap.trim().toLowerCase() === pObj.pasangan.trim().toLowerCase());
+            if (pSpouse && !parentsNodes.some(p => p.namaLengkap === pSpouse.namaLengkap)) {
+              parentsNodes.push(pSpouse);
+            }
+          }
+        } else {
+          // Jika tidak ada di DB, buat node nama string saja
+          parentsNodes.push({ namaLengkap: rootItem.orangTua, pasangan: "", tanggalLahir: "Tdk terekam", foto: "" });
+        }
+      }
+
+      // 2. ROOT & PASANGAN (Level 2 - Tengah)
+      let activeNodes = [rootItem];
+      if (rootItem.pasangan && rootItem.pasangan.trim() !== "") {
+        const spouseObj = familyData.find(d => d.namaLengkap.trim().toLowerCase() === rootItem.pasangan.trim().toLowerCase());
+        if (spouseObj) {
+          activeNodes.push(spouseObj);
+        } else {
+          activeNodes.push({ namaLengkap: rootItem.pasangan, pasangan: rootItem.namaLengkap, tanggalLahir: "Tdk terekam", foto: "" });
+        }
+      }
+
+      // 3. CARI ANAK-ANAK (Level 3 - Bawah)
+      let childrenNodes = [];
+      if (rootItem.anak && rootItem.anak.trim() !== "") {
+        const anakNames = rootItem.anak.split(',');
+        anakNames.forEach(aName => {
+          const cleanName = aName.trim();
+          const aObj = familyData.find(d => d.namaLengkap.trim().toLowerCase() === cleanName.toLowerCase());
+          if (aObj) {
+            childrenNodes.push(aObj);
+          } else {
+            childrenNodes.push({ namaLengkap: cleanName, pasangan: "", tanggalLahir: "Tdk terekam", foto: "" });
+          }
+        });
+      }
+
+      // --- MULAI MEMBUAT STRUKTUR DOM TREE —-
+      
+      // BARIS 1: ORANG TUA (Jika Ada)
+      if (parentsNodes.length > 0) {
+        const parentRow = document.createElement('div');
+        parentRow.className = "tree-row";
+        parentsNodes.forEach(node => {
+          parentRow.appendChild(createTreeNodeCard(node, "Orang Tua"));
+        });
+        grid.appendChild(parentRow);
+
+        // Garis Penghubung
+        const conn1 = document.createElement('div');
+        conn1.className = "tree-connector-line";
+        grid.appendChild(conn1);
+      }
+
+      // BARIS 2: ROOT & PASANGAN
+      const centerRow = document.createElement('div');
+      centerRow.className = "tree-row";
+      activeNodes.forEach(node => {
+        const isRoot = node.namaLengkap === rootItem.namaLengkap;
+        centerRow.appendChild(createTreeNodeCard(node, isRoot ? "Tokoh Akar (Root)" : "Pasangan", isRoot));
+      });
+      grid.appendChild(centerRow);
+
+      // BARIS 3: ANAK-ANAK (Jika Ada)
+      if (childrenNodes.length > 0) {
+        // Garis Penghubung
+        const conn2 = document.createElement('div');
+        conn2.className = "tree-connector-line";
+        grid.appendChild(conn2);
+
+        const childRow = document.createElement('div');
+        childRow.className = "tree-row";
+        childrenNodes.forEach(node => {
+          childRow.appendChild(createTreeNodeCard(node, "Anak / Keturunan"));
+        });
+        grid.appendChild(childRow);
+      }
+    }
+
+    /**
+     * Membuat Desain Komponen Card Node untuk Bagan
+     */
+    function createTreeNodeCard(member, relationTitle, isActiveRoot = false) {
+      const card = document.createElement('div');
+      card.className = `tree-card ${isActiveRoot ? 'active-root' : ''}`;
+      
+      const photoSrc = getAvatarUrl(member.foto, member.namaLengkap);
+      const statusBadge = (member.tanggalMeninggal && member.tanggalMeninggal.trim() !== "") 
+        ? `<span class="badge bg-danger px-2 mt-1" style="font-size:0.65rem;">Wafat</span>` 
+        : `<span class="badge bg-success px-2 mt-1" style="font-size:0.65rem;">Hidup</span>`;
+
+      card.innerHTML = `
+        <span class="tree-card-badge">${relationTitle}</span>
+        <div class="mt-2 text-center">
+          <img class="avatar-circle mb-2" src="${photoSrc}" alt="avatar">
+          <div class="fw-bold text-dark text-truncate">${escapeHTML(member.namaLengkap)}</div>
+          <small class="text-muted d-block" style="font-size: 0.72rem;">Lahir: ${escapeHTML(member.tanggalLahir || '-')}</small>
+          ${statusBadge}
+        </div>
+      `;
+
+      // Event agar jika diklik, dia menjadi tokoh Root baru di tampilan bagan
+      card.addEventListener('click', function() {
+        // Lakukan pengecekan apakah tokoh ini terdaftar resmi di DB silsilah kita
+        const exist = familyData.some(d => d.namaLengkap.trim().toLowerCase() === member.namaLengkap.trim().toLowerCase());
+        if (exist) {
+          document.getElementById('tree-root-select').value = member.namaLengkap;
+          renderTreeView();
+        } else {
+          Swal.fire({
+            title: "Simpan Anggota?",
+            text: "Tokoh \"" + member.namaLengkap + "\" terdeteksi belum didata di database utama. Tambahkan sekarang?",
+            icon: "question",
+            showCancelButton: true,
+            confirmButtonText: "Ya, Tambahkan!",
+            cancelButtonText: "Batal"
+          }).then((res) => {
+            if (res.isConfirmed) {
+              openAddRelationModalWithPrepopulate(member.namaLengkap);
+            }
+          });
+        }
+      });
+
+      return card;
+    }
+
+    /**
+     * SETUP RELASI DAN AUTO PRE-POPULATE FORM
+     */
+    function quickAddRelation(parentName, type) {
+      document.getElementById('memberForm').reset();
+      document.getElementById('form-foto-preview').src = "https://api.dicebear.com/7.x/avataaars/svg?seed=preview";
+      document.getElementById('form-foto-base64').value = "";
+      document.getElementById('form-is-update').value = "false";
+      document.getElementById('form-old-name').value = "";
+
+      // Matikan tgl wafat default
+      document.getElementById('checkbox-wafat').checked = false;
+      document.getElementById('input-tgl-wafat').setAttribute('disabled', 'true');
+
+      if (type === 'partner') {
+        document.getElementById('input-pasangan').value = parentName;
+        document.getElementById('memberModalLabel').innerHTML = `<i class="bi bi-heart-fill text-danger"></i> Tambah Pasangan untuk ${escapeHTML(parentName)}`;
+      } else if (type === 'child') {
+        document.getElementById('input-orangtua').value = parentName;
+        document.getElementById('memberModalLabel').innerHTML = `<i class="bi bi-people-fill text-primary"></i> Tambah Anak untuk ${escapeHTML(parentName)}`;
+      }
+
+      bootstrapModal.show();
+    }
+
+    function openAddRelationModalWithPrepopulate(name) {
+      document.getElementById('memberForm').reset();
+      document.getElementById('form-foto-preview').src = "https://api.dicebear.com/7.x/avataaars/svg?seed=preview";
+      document.getElementById('form-foto-base64').value = "";
+      document.getElementById('form-is-update').value = "false";
+      document.getElementById('form-old-name').value = "";
+      document.getElementById('checkbox-wafat').checked = false;
+      document.getElementById('input-tgl-wafat').setAttribute('disabled', 'true');
+
+      document.getElementById('input-nama').value = name;
+      document.getElementById('memberModalLabel').innerHTML = `<i class="bi bi-plus-circle-fill text-primary"></i> Registrasi Silsilah: ${escapeHTML(name)}`;
+      
+      bootstrapModal.show();
+    }
+
+    /**
+     * BUKA FORM ANGGOTA BARU (MODAL STANDARD)
+     */
+    function openAddModal() {
+      document.getElementById('memberForm').reset();
+      document.getElementById('form-foto-preview').src = "https://api.dicebear.com/7.x/avataaars/svg?seed=preview";
+      document.getElementById('form-foto-base64').value = "";
+      document.getElementById('form-is-update').value = "false";
+      document.getElementById('form-old-name').value = "";
+      
+      // Reset Wafat switch & tgl
+      document.getElementById('checkbox-wafat').checked = false;
+      document.getElementById('input-tgl-wafat').setAttribute('disabled', 'true');
+
+      document.getElementById('memberModalLabel').innerHTML = `<i class="bi bi-person-plus-fill text-warning"></i> Tambah Anggota Silsilah`;
+      
+      bootstrapModal.show();
+    }
+
+    /**
+     * EDIT ANGGOTA KELUARGA
+     */
+    function editMember(namaLengkap) {
+      const match = familyData.find(d => d.namaLengkap.trim().toLowerCase() === namaLengkap.trim().toLowerCase());
+      if (!match) return;
+
+      document.getElementById('memberForm').reset();
+      
+      // Isi value form
+      document.getElementById('form-is-update').value = "true";
+      document.getElementById('form-old-name').value = match.namaLengkap;
+      
+      document.getElementById('input-nama').value = match.namaLengkap;
+      document.getElementById('input-pasangan').value = match.pasangan || "";
+      document.getElementById('input-orangtua').value = match.orangTua || "";
+      document.getElementById('input-anak').value = match.anak || "";
+      document.getElementById('input-tgl-lahir').value = formatToInputDate(match.tanggalLahir);
+
+      if (match.tanggalMeninggal && match.tanggalMeninggal.trim() !== "") {
+        document.getElementById('checkbox-wafat').checked = true;
+        document.getElementById('input-tgl-wafat').removeAttribute('disabled');
+        document.getElementById('input-tgl-wafat').value = formatToInputDate(match.tanggalMeninggal);
+      } else {
+        document.getElementById('checkbox-wafat').checked = false;
+        document.getElementById('input-tgl-wafat').setAttribute('disabled', 'true');
+        document.getElementById('input-tgl-wafat').value = "";
+      }
+
+      if (match.foto && match.foto.trim() !== "") {
+        document.getElementById('form-foto-preview').src = match.foto;
+        document.getElementById('form-foto-base64').value = match.foto;
+      } else {
+        document.getElementById('form-foto-preview').src = "https://api.dicebear.com/7.x/avataaars/svg?seed=preview";
+        document.getElementById('form-foto-base64').value = "";
+      }
+
+      document.getElementById('memberModalLabel').innerHTML = `<i class="bi bi-pencil-square text-warning"></i> Koreksi Data: ${escapeHTML(match.namaLengkap)}`;
+      bootstrapModal.show();
+    }
+
+    // Helper konversi format tanggal ISO ke Input date HTML
+    function formatToInputDate(dateStr) {
+      if(!dateStr) return "";
+      try {
+        const d = new Date(dateStr);
+        if (isNaN(d.getTime())) return dateStr; // raw fallback
+        const month = '' + (d.getMonth() + 1);
+        const day = '' + d.getDate();
+        const year = d.getFullYear();
+
+        return [year, month.padStart(2, '0'), day.padStart(2, '0')].join('-');
+      } catch(e) {
+        return dateStr;
+      }
+    }
+
+    /**
+     * SUBMIT SAVE / UPDATE TRANSACTION (FORM SUBMISSION)
+     */
+    function handleFormSubmit(event) {
+      event.preventDefault();
+
+      // Aktifkan visual loading state untuk menghindari spam klik ganda (Anti Double-Click)
+      const btnSubmit = document.getElementById('btn-submit-form');
+      const btnText = document.getElementById('btn-text');
+      const btnSpinner = document.getElementById('btn-spinner');
+
+      btnSubmit.setAttribute('disabled', 'true');
+      btnText.textContent = "Sedang Menyimpan...";
+      btnSpinner.classList.remove('d-none');
+
+      const isUpdate = document.getElementById('form-is-update').value === "true";
+      const oldNamaLengkap = document.getElementById('form-old-name').value;
+
+      const member = {
+        namaLengkap: document.getElementById('input-nama').value.trim(),
+        pasangan: document.getElementById('input-pasangan').value.trim(),
+        orangTua: document.getElementById('input-orangtua').value.trim(),
+        anak: document.getElementById('input-anak').value.trim(),
+        tanggalLahir: document.getElementById('input-tgl-lahir').value,
+        tanggalMeninggal: document.getElementById('checkbox-wafat').checked ? document.getElementById('input-tgl-wafat').value : "",
+        foto: document.getElementById('form-foto-base64').value
+      };
+
+      // Validasi mendalam dan komprehensif (Human Error Prevention)
+      if (!member.namaLengkap || !member.tanggalLahir) {
+        Swal.fire("Gagal Validasi", "Nama Lengkap dan Tanggal Lahir wajib diisi.", "warning");
+        resetFormButton();
+        return;
+      }
+
+      const namaLower = member.namaLengkap.toLowerCase();
+      const pasanganLower = member.pasangan.toLowerCase();
+      const orangTuaLower = member.orangTua.toLowerCase();
+      const anakLower = member.anak.toLowerCase();
+
+      // Prevents self-referential relations
+      if (pasanganLower === namaLower) {
+        Swal.fire("Gagal Validasi", "Nama pasangan tidak boleh sama dengan nama diri sendiri!", "warning");
+        resetFormButton();
+        return;
+      }
+      if (orangTuaLower === namaLower) {
+        Swal.fire("Gagal Validasi", "Nama orang tua tidak boleh sama dengan nama diri sendiri!", "warning");
+        resetFormButton();
+        return;
+      }
+      if (anakLower === namaLower) {
+        Swal.fire("Gagal Validasi", "Nama anak tidak boleh sama dengan nama diri sendiri!", "warning");
+        resetFormButton();
+        return;
+      }
+
+      // Prevents logically conflicting roles
+      if (member.pasangan && member.orangTua && pasanganLower === orangTuaLower) {
+        Swal.fire("Gagal Validasi", `Orang tua ("${member.orangTua}") tidak boleh sama dengan pasangan ("${member.pasangan}")!`, "warning");
+        resetFormButton();
+        return;
+      }
+      if (member.pasangan && member.anak && pasanganLower === anakLower) {
+        Swal.fire("Gagal Validasi", `Anak ("${member.anak}") tidak boleh sama dengan pasangan ("${member.pasangan}")!`, "warning");
+        resetFormButton();
+        return;
+      }
+      if (member.orangTua && member.anak && orangTuaLower === anakLower) {
+        Swal.fire("Gagal Validasi", `Orang tua ("${member.orangTua}") tidak boleh sama dengan anak ("${member.anak}")!`, "warning");
+        resetFormButton();
+        return;
+      }
+
+      // Chronological date safety checks
+      const birthDateObj = new Date(member.tanggalLahir);
+      const today = new Date();
+
+      if (birthDateObj > today) {
+        Swal.fire("Gagal Validasi", "Tanggal Lahir tidak boleh di masa depan!", "warning");
+        resetFormButton();
+        return;
+      }
+
+      if (document.getElementById('checkbox-wafat').checked) {
+        if (!member.tanggalMeninggal) {
+          Swal.fire("Gagal Validasi", "Tanggal Wafat wajib ditentukan jika status Anggota adalah Wafat.", "warning");
+          resetFormButton();
+          return;
+        }
+        const deceasedDateObj = new Date(member.tanggalMeninggal);
+        if (deceasedDateObj > today) {
+          Swal.fire("Gagal Validasi", "Tanggal Wafat tidak boleh di masa depan!", "warning");
+          resetFormButton();
+          return;
+        }
+        if (deceasedDateObj < birthDateObj) {
+          Swal.fire("Gagal Validasi", "Tanggal Wafat tidak boleh mendahului Tanggal Lahir!", "warning");
+          resetFormButton();
+          return;
+        }
+      }
+
+      if (IS_GAS) {
+        // Backend live Google Apps Script
+        google.script.run
+          .withSuccessHandler(function(response) {
+            Swal.fire({
+              title: "Selesai!",
+              text: response.message,
+              icon: "success",
+              timer: 1500
+            });
+            bootstrapModal.hide();
+            fetchAndLoadData(); // Reload list
+            resetFormButton();
+          })
+          .withFailureHandler(function(err) {
+            Swal.fire("Transaksi Gagal", err.message, "error");
+            resetFormButton();
+          })
+          .saveData(member, isUpdate, oldNamaLengkap);
+      } else {
+        // Backend Lokal Fallback Simulator (Offline)
+        setTimeout(() => {
+          if (isUpdate) {
+            // Check duplikasi nama saat memperbarui data (untuk nama baru yang bentrok dengan database)
+            const nameChanged = namaLower !== oldNamaLengkap.trim().toLowerCase();
+            if (nameChanged) {
+              const isExist = familyData.some(d => d.namaLengkap.trim().toLowerCase() === namaLower);
+              if (isExist) {
+                Swal.fire("Nama Duplikat", `Nama "${member.namaLengkap}" sudah digunakan oleh orang lain!`, "error");
+                resetFormButton();
+                return;
+              }
+
+              // Referential Integrity Sync: Pembaruan referensi relasi anggota lain otomatis agar tidak broken link
+              const oldNameLower = oldNamaLengkap.trim().toLowerCase();
+              familyData = familyData.map(item => {
+                const updatedItem = { ...item };
+                if (item.pasangan.trim().toLowerCase() === oldNameLower) {
+                  updatedItem.pasangan = member.namaLengkap;
+                }
+                if (item.orangTua.trim().toLowerCase() === oldNameLower) {
+                  updatedItem.orangTua = member.namaLengkap;
+                }
+                if (item.anak.trim().toLowerCase() === oldNameLower) {
+                  updatedItem.anak = member.namaLengkap;
+                }
+                return updatedItem;
+              });
+            }
+
+            // Edit data
+            const index = familyData.findIndex(d => d.namaLengkap.trim().toLowerCase() === oldNamaLengkap.trim().toLowerCase());
+            if (index > -1) {
+              familyData[index] = member;
+            }
+          } else {
+            // Check duplikasi nama saat entri baru
+            const isExist = familyData.some(d => d.namaLengkap.trim().toLowerCase() === namaLower);
+            if (isExist) {
+              Swal.fire("Nama Duplikat", "Anggota \"" + member.namaLengkap + "\" sudah terdaftar.", "error");
+              resetFormButton();
+              return;
+            }
+            familyData.push(member);
+          }
+
+          // Simpan ke local storage
+          localStorage.setItem('local_family_tree', JSON.stringify(familyData));
+          
+          Swal.fire({
+            title: "Tersimpan",
+            text: "Berhasil menyimpan silsilah ke database simulasi!",
+            icon: "success",
+            timer: 1500,
+            showConfirmButton: false
+          });
+
+          bootstrapModal.hide();
+          processAndRenderDashboard();
+          resetFormButton();
+        }, 1000);
+      }
+    }
+
+    function resetFormButton() {
+      const btnSubmit = document.getElementById('btn-submit-form');
+      const btnText = document.getElementById('btn-text');
+      const btnSpinner = document.getElementById('btn-spinner');
+
+      btnSubmit.removeAttribute('disabled');
+      btnText.textContent = "Simpan Anggota";
+      btnSpinner.classList.add('d-none');
+    }
+
+    /**
+     * HAPUS ANGGOTA KELUARGA
+     */
+    function deleteMember(namaLengkap) {
+      Swal.fire({
+        title: "Konfirmasi Hapus?",
+        text: "Anda akan menghapus \"" + namaLengkap + "\" dari rekam silsilah. Sifat ini permanen!",
+        icon: "warning",
+        showCancelButton: true,
+        confirmButtonColor: "#d33",
+        cancelButtonColor: "#3085d6",
+        confirmButtonText: "Ya, Hapus!",
+        cancelButtonText: "Batal"
+      }).then((result) => {
+        if (result.isConfirmed) {
+          showLoadingIndicators(true);
+
+          if (IS_GAS) {
+            google.script.run
+              .withSuccessHandler(function(response) {
+                Swal.fire("Terhapus!", response.message, "success");
+                fetchAndLoadData();
+              })
+              .withFailureHandler(function(err) {
+                Swal.fire("Aksi Gagal", err.message, "error");
+                showLoadingIndicators(false);
+              })
+              .deleteData(namaLengkap);
+          } else {
+            setTimeout(() => {
+              const deletedNameLower = namaLengkap.trim().toLowerCase();
+              familyData = familyData.filter(d => d.namaLengkap.trim().toLowerCase() !== deletedNameLower);
+              
+              // Clean references in remaining simulated records
+              familyData = familyData.map(item => {
+                const cleaned = { ...item };
+                if (item.pasangan.trim().toLowerCase() === deletedNameLower) {
+                  cleaned.pasangan = "";
+                }
+                if (item.orangTua.trim().toLowerCase() === deletedNameLower) {
+                  cleaned.orangTua = "";
+                }
+                if (item.anak.trim().toLowerCase() === deletedNameLower) {
+                  cleaned.anak = "";
+                }
+                return cleaned;
+              });
+
+              localStorage.setItem('local_family_tree', JSON.stringify(familyData));
+              Swal.fire("Terhapus!", "Data berhasil dibersihkan dari database lokal.", "success");
+              processAndRenderDashboard();
+              showLoadingIndicators(false);
+            }, 800);
+          }
+        }
+      });
+    }
+
+    /**
+     * EXPORT LANDSCAPE PDF RAFI DENGAN AUTOTABLE (jsPDF)
+     */
+    function exportDataToPDF() {
+      if (familyData.length === 0) {
+        Swal.fire("Data Kosong", "Masukkan minimal 1 data keluarga terlebih dahulu.", "info");
+        return;
+      }
+
+      try {
+        const { jsPDF } = window.jspdf;
+        // Terapkan Layout Silang / Landscape format agar kolom panjang muat dengan rapi
+        const doc = new jsPDF('l', 'mm', 'a4');
+
+        // KOORDINAT TENGAH HALAMAN LANDSCAPE (A4 Landscape lebar: 297mm)
+        const pageWidth = doc.internal.pageSize.width;
+        
+        // --- 1. MEMBUAT KOP / HEADER BIRU ---
+        doc.setFillColor(13, 110, 253); // Royal Blue
+        doc.rect(0, 0, pageWidth, 42, 'F');
+
+        // Judul Utama (Putih bersih)
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(22);
+        doc.setTextColor(255, 255, 255);
+        doc.text("BAGAN DATA SILSILAH KELUARGA DIGITAL", pageWidth / 2, 18, { align: 'center' });
+
+        // Subtitle & tgl cetak
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(10);
+        doc.setTextColor(230, 240, 255);
+        
+        const formatTgl = new Date().toLocaleDateString('id-ID', {
+          weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
+        });
+        doc.text("Database Online Otomatisasi Google Sheets — Tanggal Cetak Dokumen: " + formatTgl, pageWidth / 2, 26, { align: 'center' });
+        doc.text("Status Cetak: Terverifikasi Sistem", pageWidth / 2, 33, { align: 'center' });
+
+        // --- 2. PEMBUATAN TABEL PDF (AutoTable) ---
+        // Saring data dari yang terbaru ke terlama sesuai visual table
+        const printedRows = [...familyData].reverse().map((item, idx) => {
+          return [
+            idx + 1,
+            item.namaLengkap || "-",
+            item.pasangan || "-",
+            item.orangTua || "-",
+            item.anak || "-",
+            item.tanggalLahir || "-",
+            item.tanggalMeninggal || "Hidup"
+          ];
+        });
+
+        doc.autoTable({
+          startY: 50,
+          head: [['No', 'Nama Lengkap', 'Pasangan', 'Orang Tua (Ayah/Ibu)', 'Anak-Anak', 'Tanggal Lahir', 'Tanggal Meninggal']],
+          body: printedRows,
+          theme: 'striped',
+          headStyles: {
+            fillColor: [11, 37, 69], // Dark Blue Navy Header
+            textColor: [255, 255, 255],
+            fontSize: 10,
+            halign: 'center',
+            fontStyle: 'bold'
+          },
+          bodyStyles: {
+            fontSize: 9,
+            valign: 'middle'
+          },
+          columnStyles: {
+            0: { width: 10, halign: 'center' },
+            1: { cellWidth: 45, fontStyle: 'bold' },
+            2: { cellWidth: 40 },
+            3: { cellWidth: 40 },
+            4: { cellWidth: 65 },
+            5: { cellWidth: 25, halign: 'center' },
+            6: { cellWidth: 30, halign: 'center' }
+          },
+          margin: { left: 15, right: 15 },
+          didDrawPage: function (data) {
+            // Footer Halaman
+            const pageCount = doc.internal.getNumberOfPages();
+            doc.setFontSize(8);
+            doc.setTextColor(150, 150, 150);
+            doc.text("Laporan Resmi Silsilah — Halaman " + data.pageNumber + " dari " + pageCount, 15, doc.internal.pageSize.height - 10);
+            doc.text("Otomatisasi Sistem Google Apps Script & Cloud Workspace", doc.internal.pageSize.width - 95, doc.internal.pageSize.height - 10);
+          }
+        });
+
+        // Simpan Berkas PDF
+        doc.save("Laporan_Silsilah_Keluarga_" + new Date().toISOString().slice(0,10) + ".pdf");
+        
+        Swal.fire({
+          title: "PDF Siap!",
+          text: "Format PDF Landscape berhasil diunduh.",
+          icon: "success",
+          timer: 1500,
+          showConfirmButton: false
+        });
+      } catch(e) {
+        Swal.fire("Gagal Export PDF", e.message, "error");
+      }
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,6 @@
+{
+  "name": "Silsilah Keluarga",
+  "description": "Aplikasi Silsilah Keluarga interaktif digital yang terintegrasi dengan Google Sheets sebagai database online, dilengkapi dengan Script Lock dan visualisasi bagan silsilah hubungan generasi.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
